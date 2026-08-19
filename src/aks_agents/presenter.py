@@ -39,7 +39,9 @@ def build_ui_result(
                     quantity=f"{ingredient.quantity:g} {ingredient.unit}",
                     status=status,
                     note=(
-                        f"{item.available_quantity:g} {item.unit} in stock"
+                        substitute.reason
+                        if substitute
+                        else f"{item.available_quantity:g} {item.unit} in stock"
                         if item
                         else "Not found in inventory"
                     ),
@@ -84,7 +86,8 @@ def build_ui_result(
     return UiChatResult(
         summary=(
             f"Prepared {len(recommendations)} recommendation(s) for "
-            f"{request.servings} serving(s).{budget_note}"
+            f"{request.servings} serving(s). {result.meal_plan.rationale}"
+            f"{budget_note}"
         ),
         recommendations=recommendations,
         citations=citations,

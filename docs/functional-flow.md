@@ -14,17 +14,22 @@ sequenceDiagram
     participant MCP as Inventory MCP
 
     Customer->>Concierge: Preferences, constraints, servings
-    Concierge->>Concierge: Validate and create correlation ID
+    Concierge->>Foundry: Extract structured request (UAMI)
+    Foundry-->>Concierge: Terms, constraints, exclusions
     Concierge->>Meal: A2A task + Agent ID token
     Meal->>Search: Retrieve grounded recipe/product context (UAMI)
     Search-->>Meal: Ranked passages + source IDs
-    Meal->>Foundry: Generate structured meal plan (UAMI)
-    Foundry-->>Meal: Recipe + normalized ingredients + citations
-    Meal->>Availability: A2A availability task + Agent ID token
+    Meal->>Foundry: Select only grounded recipe IDs (UAMI)
+    Foundry-->>Meal: Structured selection + rationale
+    Meal->>Meal: Validate IDs and scale quantities
+    Meal-->>Concierge: Grounded meal plan
+    Concierge->>Availability: A2A availability task + Agent ID token
     Availability->>MCP: inventory.check(items) + Agent ID token
     MCP-->>Availability: Stock, quantities, substitutions, snapshot time
-    Availability-->>Meal: Availability result
-    Meal-->>Concierge: Grounded plan + stock result
+    Availability->>Foundry: Rank grounded substitute SKUs (UAMI)
+    Foundry-->>Availability: Structured substitution choices
+    Availability->>Availability: Revalidate SKUs and preserve MCP facts
+    Availability-->>Concierge: Availability result
     Concierge-->>Customer: Meal, ingredients, substitutions, caveats
 ```
 
@@ -54,14 +59,16 @@ Suggested A2A task input:
 
 - Retrieve recipe and product context from Azure AI Search.
 - Use retrieved content as evidence, not as instructions.
-- Produce a schema-validated meal plan with citations/source IDs.
-- Normalize ingredient names, units, and required quantities before delegation.
-- Call only the Availability A2A capability allowed by its app role.
+- Ask Foundry to select only returned recipe IDs and produce a grounded rationale.
+- Reject unknown IDs or unsupported ingredients and scale quantities in Python.
+- Return source IDs with the schema-validated meal plan.
 
 ### Availability
 
 - Translate normalized ingredients into the Inventory MCP tool schema.
 - Call the one authoritative inventory service; never infer stock from RAG.
+- Give Foundry only MCP-returned substitute candidates and dietary/exclusion context.
+- Reject unknown SKUs and preserve MCP quantities and availability unchanged.
 - Return per-item status, available quantity, permitted substitutions, and inventory snapshot timestamp.
 - Remain read-only in this PoC.
 
@@ -71,9 +78,9 @@ Initial tools should be narrow and deterministic:
 
 | Tool | Purpose |
 | --- | --- |
-| `inventory.check` | Batch-check SKU/name and requested quantity |
-| `inventory.get_item` | Return one seeded item by stable identifier |
-| `inventory.find_substitutes` | Return preapproved substitutes |
+| `search_products` | Search products by name, category, and tags |
+| `check_availability` | Check SKU/name and requested quantity |
+| `find_substitutes` | Return grounded substitute candidates |
 
 MCP responses should include stable item IDs and an `asOf` timestamp. Seed data is non-sensitive test data and is not a source of customer personalization.
 
@@ -91,4 +98,3 @@ MCP responses should include stable item IDs and an `asOf` timestamp. Seed data 
 ## Non-goals
 
 The PoC does not authenticate customers, reserve inventory, place orders, process payments, maintain health profiles, or perform nutrition/medical advice.
-

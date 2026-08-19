@@ -35,7 +35,7 @@
       "Add vegetables and cook until softened.",
       "Add rice and stock, cover, and simmer until cooked."
     ],
-    "tags": ["dairy-free", "one-pan", "family"]
+    "tags": ["dairy-free", "one-pan", "family", "american"]
   },
   {
     "id": "creamy-tomato-pasta",
@@ -54,7 +54,7 @@
       "Simmer chopped tomato and onion until saucy.",
       "Stir in cream, pasta, and parmesan."
     ],
-    "tags": ["vegetarian", "pasta", "comfort-food"]
+    "tags": ["vegetarian", "pasta", "comfort-food", "italian"]
   },
   {
     "id": "tofu-vegetable-stir-fry",
@@ -73,6 +73,548 @@
       "Stir-fry the vegetables.",
       "Add tofu, soy sauce, and ginger and toss."
     ],
-    "tags": ["vegan", "vegetarian", "quick", "asian"]
+    "tags": ["vegan", "vegetarian", "quick", "asian", "chinese"]
+  },
+  {
+    "id": "spaghetti-alla-carbonara",
+    "name": "Spaghetti alla Carbonara",
+    "description": "The Roman classic built on eggs, cured pork, and sharp sheep's cheese.",
+    "servings": 4,
+    "ingredients": [
+      {"name": "spaghetti", "quantity": 1, "unit": "lb"},
+      {"name": "pancetta", "quantity": 6, "unit": "oz"},
+      {"name": "eggs", "quantity": 4, "unit": "each"},
+      {"name": "pecorino romano", "quantity": 1, "unit": "cup"},
+      {"name": "black pepper", "quantity": 2, "unit": "tsp"},
+      {"name": "garlic", "quantity": 2, "unit": "clove"}
+    ],
+    "instructions": [
+      "Boil the spaghetti in well-salted water and reserve a cup of the cooking liquid.",
+      "Render the diced pancetta with the crushed garlic until crisp, then discard the garlic.",
+      "Whisk the eggs with the grated pecorino and plenty of black pepper.",
+      "Toss the drained pasta with the pancetta off the heat, then add the egg mixture and loosen with pasta water until glossy."
+    ],
+    "tags": ["italian", "pasta", "comfort-food", "quick"]
+  },
+  {
+    "id": "risotto-ai-funghi",
+    "name": "Risotto ai Funghi",
+    "description": "Creamy northern Italian mushroom risotto finished with butter and parmesan.",
+    "servings": 4,
+    "ingredients": [
+      {"name": "arborio rice", "quantity": 2, "unit": "cup"},
+      {"name": "mushrooms", "quantity": 12, "unit": "oz"},
+      {"name": "onion", "quantity": 1, "unit": "each"},
+      {"name": "white wine", "quantity": 1, "unit": "cup"},
+      {"name": "vegetable stock", "quantity": 5, "unit": "cup"},
+      {"name": "parmesan", "quantity": 1, "unit": "cup"},
+      {"name": "butter", "quantity": 3, "unit": "tbsp"}
+    ],
+    "instructions": [
+      "Saute the sliced mushrooms until browned and set them aside.",
+      "Soften the diced onion in butter, add the rice, and toast for two minutes.",
+      "Pour in the wine and let it evaporate, then add warm stock one ladle at a time.",
+      "Stir the mushrooms back in and finish off the heat with the remaining butter and parmesan."
+    ],
+    "tags": ["vegetarian", "gluten-free", "italian", "risotto", "comfort-food"]
+  },
+  {
+    "id": "coq-au-vin",
+    "name": "Coq au Vin",
+    "description": "Burgundian chicken braised slowly in red wine with bacon and mushrooms.",
+    "servings": 4,
+    "ingredients": [
+      {"name": "chicken thighs", "quantity": 6, "unit": "each"},
+      {"name": "bacon", "quantity": 4, "unit": "oz"},
+      {"name": "red wine", "quantity": 2, "unit": "cup"},
+      {"name": "mushrooms", "quantity": 8, "unit": "oz"},
+      {"name": "carrot", "quantity": 3, "unit": "each"},
+      {"name": "onion", "quantity": 1, "unit": "each"},
+      {"name": "chicken stock", "quantity": 1, "unit": "cup"},
+      {"name": "thyme", "quantity": 1, "unit": "tbsp"}
+    ],
+    "instructions": [
+      "Crisp the diced bacon in a heavy pot and set it aside.",
+      "Brown the chicken thighs in the rendered fat, then remove them.",
+      "Cook the onion, carrot, and mushrooms until coloured, then deglaze with the red wine.",
+      "Return the chicken and bacon with the stock and thyme and braise gently until tender."
+    ],
+    "tags": ["french", "braise", "comfort-food", "dairy-free"]
+  },
+  {
+    "id": "ratatouille-provencale",
+    "name": "Ratatouille Provencale",
+    "description": "Slow-cooked Provencal summer vegetables with garlic, thyme, and olive oil.",
+    "servings": 4,
+    "ingredients": [
+      {"name": "eggplant", "quantity": 1, "unit": "each"},
+      {"name": "zucchini", "quantity": 2, "unit": "each"},
+      {"name": "bell pepper", "quantity": 2, "unit": "each"},
+      {"name": "tomatoes", "quantity": 4, "unit": "each"},
+      {"name": "onion", "quantity": 1, "unit": "each"},
+      {"name": "garlic", "quantity": 3, "unit": "clove"},
+      {"name": "olive oil", "quantity": 3, "unit": "tbsp"},
+      {"name": "thyme", "quantity": 1, "unit": "tbsp"}
+    ],
+    "instructions": [
+      "Cut every vegetable into even chunks and salt the eggplant briefly.",
+      "Cook each vegetable separately in olive oil so it keeps its own texture.",
+      "Combine everything with the garlic, chopped tomatoes, and thyme.",
+      "Simmer uncovered until thick and glossy, then rest before serving."
+    ],
+    "tags": ["vegan", "vegetarian", "gluten-free", "dairy-free", "french", "mediterranean"]
+  },
+  {
+    "id": "chicken-teriyaki-donburi",
+    "name": "Chicken Teriyaki Donburi",
+    "description": "Glazed Japanese chicken served over steamed rice with scallions.",
+    "servings": 2,
+    "ingredients": [
+      {"name": "chicken thighs", "quantity": 4, "unit": "each"},
+      {"name": "rice", "quantity": 2, "unit": "cup"},
+      {"name": "soy sauce", "quantity": 4, "unit": "tbsp"},
+      {"name": "mirin", "quantity": 3, "unit": "tbsp"},
+      {"name": "sugar", "quantity": 1, "unit": "tbsp"},
+      {"name": "ginger", "quantity": 1, "unit": "tbsp"},
+      {"name": "scallion", "quantity": 3, "unit": "each"}
+    ],
+    "instructions": [
+      "Steam the rice while you prepare the chicken.",
+      "Sear the thighs skin-side down until golden, then turn and cook through.",
+      "Add the soy sauce, mirin, sugar, and grated ginger and reduce to a sticky glaze.",
+      "Slice the chicken over the rice and finish with sliced scallion."
+    ],
+    "tags": ["dairy-free", "japanese", "rice-bowl", "quick"]
+  },
+  {
+    "id": "miso-ramen-with-tofu",
+    "name": "Miso Ramen with Tofu",
+    "description": "A warming miso broth with noodles, seared tofu, corn, and scallion.",
+    "servings": 2,
+    "ingredients": [
+      {"name": "ramen noodles", "quantity": 2, "unit": "portion"},
+      {"name": "miso paste", "quantity": 3, "unit": "tbsp"},
+      {"name": "tofu", "quantity": 1, "unit": "block"},
+      {"name": "vegetable stock", "quantity": 4, "unit": "cup"},
+      {"name": "corn", "quantity": 1, "unit": "cup"},
+      {"name": "scallion", "quantity": 2, "unit": "each"},
+      {"name": "sesame oil", "quantity": 1, "unit": "tbsp"},
+      {"name": "garlic", "quantity": 2, "unit": "clove"}
+    ],
+    "instructions": [
+      "Sear the cubed tofu in sesame oil until golden on all sides.",
+      "Warm the stock with the minced garlic, then whisk in the miso paste off the boil.",
+      "Cook the noodles separately and divide them between two bowls.",
+      "Ladle over the broth and top with tofu, corn, and sliced scallion."
+    ],
+    "tags": ["vegetarian", "japanese", "noodles", "soup"]
+  },
+  {
+    "id": "feijoada-de-panela",
+    "name": "Feijoada de Panela",
+    "description": "Brazil's black bean and smoked pork stew, brightened with orange.",
+    "servings": 6,
+    "ingredients": [
+      {"name": "black beans", "quantity": 3, "unit": "can"},
+      {"name": "pork shoulder", "quantity": 1, "unit": "lb"},
+      {"name": "smoked sausage", "quantity": 8, "unit": "oz"},
+      {"name": "bacon", "quantity": 4, "unit": "oz"},
+      {"name": "onion", "quantity": 2, "unit": "each"},
+      {"name": "garlic", "quantity": 4, "unit": "clove"},
+      {"name": "bay leaf", "quantity": 2, "unit": "each"},
+      {"name": "orange", "quantity": 1, "unit": "each"}
+    ],
+    "instructions": [
+      "Brown the cubed pork, sliced sausage, and bacon in a heavy pot.",
+      "Add the onion and garlic and cook until fragrant.",
+      "Stir in the beans with their liquid, the bay leaves, and enough water to cover.",
+      "Simmer until the pork is tender, then squeeze in the orange juice and serve with rice."
+    ],
+    "tags": ["dairy-free", "gluten-free", "brazilian", "stew", "family"]
+  },
+  {
+    "id": "moqueca-de-peixe",
+    "name": "Moqueca de Peixe",
+    "description": "Bahian fish stew simmered in coconut milk, peppers, and lime.",
+    "servings": 4,
+    "ingredients": [
+      {"name": "white fish fillet", "quantity": 1.5, "unit": "lb"},
+      {"name": "coconut milk", "quantity": 1, "unit": "can"},
+      {"name": "tomatoes", "quantity": 3, "unit": "each"},
+      {"name": "bell pepper", "quantity": 2, "unit": "each"},
+      {"name": "onion", "quantity": 1, "unit": "each"},
+      {"name": "lime", "quantity": 2, "unit": "each"},
+      {"name": "cilantro", "quantity": 1, "unit": "bunch"},
+      {"name": "palm oil", "quantity": 2, "unit": "tbsp"}
+    ],
+    "instructions": [
+      "Marinate the fish in lime juice and salt for fifteen minutes.",
+      "Layer sliced onion, pepper, and tomato in a wide pot with the palm oil.",
+      "Set the fish on top, pour over the coconut milk, and simmer gently without stirring.",
+      "Finish with chopped cilantro and serve with rice."
+    ],
+    "tags": ["dairy-free", "gluten-free", "brazilian", "seafood", "stew"]
+  },
+  {
+    "id": "smoky-bbq-pulled-chicken-sandwiches",
+    "name": "Smoky BBQ Pulled Chicken Sandwiches",
+    "description": "Shredded barbecue chicken piled onto buns with a crunchy vinegar slaw.",
+    "servings": 4,
+    "ingredients": [
+      {"name": "chicken thighs", "quantity": 6, "unit": "each"},
+      {"name": "bbq sauce", "quantity": 1, "unit": "cup"},
+      {"name": "smoked paprika", "quantity": 1, "unit": "tbsp"},
+      {"name": "brown sugar", "quantity": 2, "unit": "tbsp"},
+      {"name": "burger buns", "quantity": 4, "unit": "each"},
+      {"name": "cabbage", "quantity": 1, "unit": "head"},
+      {"name": "apple cider vinegar", "quantity": 2, "unit": "tbsp"}
+    ],
+    "instructions": [
+      "Rub the chicken with smoked paprika and brown sugar and roast until tender.",
+      "Shred the meat with two forks and fold through the barbecue sauce.",
+      "Toss the shredded cabbage with the vinegar and a pinch of salt.",
+      "Pile the chicken into toasted buns and top with the slaw."
+    ],
+    "tags": ["dairy-free", "american", "bbq", "family"]
+  },
+  {
+    "id": "new-england-clam-chowder",
+    "name": "New England Clam Chowder",
+    "description": "A thick East Coast chowder with clams, potatoes, bacon, and cream.",
+    "servings": 4,
+    "ingredients": [
+      {"name": "clams", "quantity": 2, "unit": "can"},
+      {"name": "potatoes", "quantity": 3, "unit": "each"},
+      {"name": "bacon", "quantity": 4, "unit": "oz"},
+      {"name": "cream", "quantity": 2, "unit": "cup"},
+      {"name": "onion", "quantity": 1, "unit": "each"},
+      {"name": "butter", "quantity": 2, "unit": "tbsp"},
+      {"name": "flour", "quantity": 3, "unit": "tbsp"},
+      {"name": "thyme", "quantity": 1, "unit": "tbsp"}
+    ],
+    "instructions": [
+      "Render the diced bacon, then soften the onion in the fat with the butter.",
+      "Stir in the flour and cook briefly to make a roux.",
+      "Add the diced potatoes and the clam juice and simmer until the potatoes are soft.",
+      "Pour in the cream with the clams and thyme and warm through without boiling."
+    ],
+    "tags": ["american", "soup", "comfort-food", "seafood"]
+  },
+  {
+    "id": "chicken-tinga-tacos",
+    "name": "Chicken Tinga Tacos",
+    "description": "Smoky chipotle chicken shredded into warm corn tortillas.",
+    "servings": 4,
+    "ingredients": [
+      {"name": "chicken breast", "quantity": 3, "unit": "each"},
+      {"name": "chipotle in adobo", "quantity": 3, "unit": "tbsp"},
+      {"name": "tomatoes", "quantity": 4, "unit": "each"},
+      {"name": "onion", "quantity": 1, "unit": "each"},
+      {"name": "garlic", "quantity": 3, "unit": "clove"},
+      {"name": "corn tortillas", "quantity": 12, "unit": "each"},
+      {"name": "lime", "quantity": 2, "unit": "each"},
+      {"name": "cilantro", "quantity": 1, "unit": "bunch"}
+    ],
+    "instructions": [
+      "Poach the chicken until cooked through, then shred it and keep the broth.",
+      "Blend the tomatoes, garlic, and chipotle into a smooth sauce.",
+      "Fry the sliced onion, add the sauce, and simmer until it darkens.",
+      "Fold the chicken through the sauce and serve in warm tortillas with lime and cilantro."
+    ],
+    "tags": ["dairy-free", "mexican", "tacos", "family"]
+  },
+  {
+    "id": "black-bean-sweet-potato-enchiladas",
+    "name": "Black Bean and Sweet Potato Enchiladas",
+    "description": "Baked vegetarian enchiladas with roasted sweet potato and melting cheddar.",
+    "servings": 4,
+    "ingredients": [
+      {"name": "black beans", "quantity": 2, "unit": "can"},
+      {"name": "sweet potato", "quantity": 2, "unit": "each"},
+      {"name": "corn tortillas", "quantity": 10, "unit": "each"},
+      {"name": "enchilada sauce", "quantity": 2, "unit": "cup"},
+      {"name": "cheddar cheese", "quantity": 2, "unit": "cup"},
+      {"name": "onion", "quantity": 1, "unit": "each"},
+      {"name": "cumin", "quantity": 2, "unit": "tsp"}
+    ],
+    "instructions": [
+      "Roast the diced sweet potato until caramelised at the edges.",
+      "Mix it with the drained beans, softened onion, and cumin.",
+      "Roll the filling into the tortillas and pack them into a baking dish.",
+      "Cover with the enchilada sauce and cheddar and bake until bubbling."
+    ],
+    "tags": ["vegetarian", "mexican", "baked", "family"]
+  },
+  {
+    "id": "chana-masala",
+    "name": "Chana Masala",
+    "description": "North Indian chickpea curry in a spiced tomato and onion masala.",
+    "servings": 4,
+    "ingredients": [
+      {"name": "chickpeas", "quantity": 2, "unit": "can"},
+      {"name": "tomatoes", "quantity": 4, "unit": "each"},
+      {"name": "onion", "quantity": 2, "unit": "each"},
+      {"name": "garlic", "quantity": 3, "unit": "clove"},
+      {"name": "ginger", "quantity": 1, "unit": "tbsp"},
+      {"name": "garam masala", "quantity": 2, "unit": "tsp"},
+      {"name": "turmeric", "quantity": 1, "unit": "tsp"},
+      {"name": "cilantro", "quantity": 1, "unit": "bunch"}
+    ],
+    "instructions": [
+      "Fry the finely chopped onion until deeply golden.",
+      "Add the garlic, ginger, turmeric, and garam masala and cook until fragrant.",
+      "Stir in the chopped tomatoes and cook down into a thick masala.",
+      "Add the chickpeas with a splash of water and simmer, then finish with cilantro."
+    ],
+    "tags": ["vegan", "vegetarian", "gluten-free", "dairy-free", "indian", "curry"]
+  },
+  {
+    "id": "butter-chicken",
+    "name": "Butter Chicken",
+    "description": "Yogurt-marinated chicken in a mellow tomato, butter, and cream sauce.",
+    "servings": 4,
+    "ingredients": [
+      {"name": "chicken thighs", "quantity": 6, "unit": "each"},
+      {"name": "greek yogurt", "quantity": 1, "unit": "cup"},
+      {"name": "tomatoes", "quantity": 5, "unit": "each"},
+      {"name": "butter", "quantity": 4, "unit": "tbsp"},
+      {"name": "cream", "quantity": 1, "unit": "cup"},
+      {"name": "garam masala", "quantity": 2, "unit": "tsp"},
+      {"name": "ginger", "quantity": 1, "unit": "tbsp"},
+      {"name": "garlic", "quantity": 3, "unit": "clove"}
+    ],
+    "instructions": [
+      "Marinate the chicken in the yogurt with half the garam masala, garlic, and ginger.",
+      "Grill or sear the chicken until charred at the edges.",
+      "Simmer the tomatoes with the butter and remaining spices, then blend until smooth.",
+      "Return the chicken to the sauce, stir through the cream, and warm gently."
+    ],
+    "tags": ["gluten-free", "indian", "curry", "comfort-food"]
+  },
+  {
+    "id": "thai-green-curry-with-tofu",
+    "name": "Thai Green Curry with Tofu",
+    "description": "Fragrant coconut green curry with tofu, eggplant, and basil.",
+    "servings": 4,
+    "ingredients": [
+      {"name": "tofu", "quantity": 1, "unit": "block"},
+      {"name": "green curry paste", "quantity": 3, "unit": "tbsp"},
+      {"name": "coconut milk", "quantity": 2, "unit": "can"},
+      {"name": "eggplant", "quantity": 1, "unit": "each"},
+      {"name": "bell pepper", "quantity": 1, "unit": "each"},
+      {"name": "basil", "quantity": 1, "unit": "bunch"},
+      {"name": "lime", "quantity": 1, "unit": "each"}
+    ],
+    "instructions": [
+      "Fry the curry paste in the thick cream from the top of the coconut milk.",
+      "Add the remaining coconut milk and bring to a gentle simmer.",
+      "Cook the eggplant and pepper in the sauce until just tender, then add the tofu.",
+      "Finish with torn basil and a squeeze of lime."
+    ],
+    "tags": ["vegan", "vegetarian", "gluten-free", "dairy-free", "thai", "curry"]
+  },
+  {
+    "id": "pad-thai-with-shrimp",
+    "name": "Pad Thai with Shrimp",
+    "description": "Rice noodles tossed in a sweet-sour tamarind sauce with shrimp and peanuts.",
+    "servings": 2,
+    "ingredients": [
+      {"name": "rice noodles", "quantity": 8, "unit": "oz"},
+      {"name": "shrimp", "quantity": 12, "unit": "oz"},
+      {"name": "eggs", "quantity": 2, "unit": "each"},
+      {"name": "bean sprouts", "quantity": 2, "unit": "cup"},
+      {"name": "peanuts", "quantity": 0.5, "unit": "cup"},
+      {"name": "tamarind paste", "quantity": 2, "unit": "tbsp"},
+      {"name": "fish sauce", "quantity": 3, "unit": "tbsp"},
+      {"name": "lime", "quantity": 1, "unit": "each"}
+    ],
+    "instructions": [
+      "Soak the rice noodles in hot water until pliable, then drain.",
+      "Whisk the tamarind paste and fish sauce into a sauce.",
+      "Stir-fry the shrimp over high heat, push them aside, and scramble the eggs.",
+      "Add the noodles and sauce, toss until coated, then fold in the sprouts.",
+      "Serve with crushed peanuts and lime wedges."
+    ],
+    "tags": ["dairy-free", "thai", "noodles", "quick", "seafood"]
+  },
+  {
+    "id": "spanish-potato-tortilla",
+    "name": "Spanish Potato Tortilla",
+    "description": "A thick Spanish omelette of slow-cooked potato and onion in olive oil.",
+    "servings": 4,
+    "ingredients": [
+      {"name": "potatoes", "quantity": 4, "unit": "each"},
+      {"name": "eggs", "quantity": 6, "unit": "each"},
+      {"name": "onion", "quantity": 1, "unit": "each"},
+      {"name": "olive oil", "quantity": 6, "unit": "tbsp"},
+      {"name": "garlic", "quantity": 2, "unit": "clove"},
+      {"name": "parsley", "quantity": 1, "unit": "bunch"}
+    ],
+    "instructions": [
+      "Poach the thinly sliced potato and onion gently in the olive oil until soft, not browned.",
+      "Drain them and fold into the beaten eggs with the garlic and a good pinch of salt.",
+      "Cook the mixture in a small pan over low heat until the base is set.",
+      "Invert onto a plate, slide back in, and finish the second side. Rest before slicing and scatter with parsley."
+    ],
+    "tags": ["vegetarian", "gluten-free", "spanish", "tapas"]
+  },
+  {
+    "id": "greek-lemon-chicken-and-potatoes",
+    "name": "Greek Lemon Chicken and Potatoes",
+    "description": "One-pan roast chicken and potatoes with lemon, oregano, and garlic.",
+    "servings": 4,
+    "ingredients": [
+      {"name": "chicken thighs", "quantity": 6, "unit": "each"},
+      {"name": "potatoes", "quantity": 4, "unit": "each"},
+      {"name": "lemon", "quantity": 2, "unit": "each"},
+      {"name": "olive oil", "quantity": 4, "unit": "tbsp"},
+      {"name": "garlic", "quantity": 4, "unit": "clove"},
+      {"name": "oregano", "quantity": 1, "unit": "tbsp"},
+      {"name": "chicken stock", "quantity": 1, "unit": "cup"}
+    ],
+    "instructions": [
+      "Toss the potato wedges and chicken with olive oil, lemon juice, garlic, and oregano.",
+      "Arrange everything in a single layer and pour the stock around the edges.",
+      "Roast at high heat, basting once, until the potatoes are golden and the chicken is cooked.",
+      "Rest for five minutes and spoon over the pan juices."
+    ],
+    "tags": ["dairy-free", "gluten-free", "greek", "mediterranean", "one-pan"]
+  },
+  {
+    "id": "vegetable-tagine-with-couscous",
+    "name": "Vegetable Tagine with Couscous",
+    "description": "Moroccan spiced vegetables and chickpeas with dried apricots over couscous.",
+    "servings": 4,
+    "ingredients": [
+      {"name": "couscous", "quantity": 2, "unit": "cup"},
+      {"name": "carrot", "quantity": 3, "unit": "each"},
+      {"name": "zucchini", "quantity": 2, "unit": "each"},
+      {"name": "chickpeas", "quantity": 1, "unit": "can"},
+      {"name": "dried apricots", "quantity": 0.5, "unit": "cup"},
+      {"name": "ras el hanout", "quantity": 2, "unit": "tsp"},
+      {"name": "vegetable stock", "quantity": 3, "unit": "cup"},
+      {"name": "onion", "quantity": 1, "unit": "each"}
+    ],
+    "instructions": [
+      "Soften the onion, then toast the ras el hanout until aromatic.",
+      "Add the carrot, zucchini, chickpeas, apricots, and two cups of stock.",
+      "Cover and simmer until the vegetables are tender and the sauce has thickened.",
+      "Steam the couscous with the remaining hot stock, fluff with a fork, and top with the tagine."
+    ],
+    "tags": ["vegan", "vegetarian", "dairy-free", "moroccan", "stew"]
+  },
+  {
+    "id": "mapo-tofu",
+    "name": "Mapo Tofu",
+    "description": "Sichuan silken tofu in a numbing chili bean sauce with minced pork.",
+    "servings": 2,
+    "ingredients": [
+      {"name": "tofu", "quantity": 1, "unit": "block"},
+      {"name": "ground pork", "quantity": 8, "unit": "oz"},
+      {"name": "doubanjiang", "quantity": 2, "unit": "tbsp"},
+      {"name": "sichuan peppercorn", "quantity": 1, "unit": "tsp"},
+      {"name": "garlic", "quantity": 3, "unit": "clove"},
+      {"name": "ginger", "quantity": 1, "unit": "tbsp"},
+      {"name": "scallion", "quantity": 3, "unit": "each"},
+      {"name": "soy sauce", "quantity": 2, "unit": "tbsp"}
+    ],
+    "instructions": [
+      "Toast and grind the sichuan peppercorns.",
+      "Brown the ground pork, then add the doubanjiang, garlic, and ginger.",
+      "Pour in a little water with the soy sauce and slide in the cubed tofu.",
+      "Simmer briefly, then scatter with scallion and the ground peppercorn."
+    ],
+    "tags": ["dairy-free", "chinese", "spicy", "quick"]
+  },
+  {
+    "id": "vegetable-bibimbap",
+    "name": "Vegetable Bibimbap",
+    "description": "Korean rice bowl with seasoned vegetables, a fried egg, and gochujang.",
+    "servings": 2,
+    "ingredients": [
+      {"name": "rice", "quantity": 2, "unit": "cup"},
+      {"name": "spinach", "quantity": 4, "unit": "cup"},
+      {"name": "carrot", "quantity": 2, "unit": "each"},
+      {"name": "mushrooms", "quantity": 6, "unit": "oz"},
+      {"name": "bean sprouts", "quantity": 2, "unit": "cup"},
+      {"name": "eggs", "quantity": 2, "unit": "each"},
+      {"name": "gochujang", "quantity": 2, "unit": "tbsp"},
+      {"name": "sesame oil", "quantity": 2, "unit": "tbsp"}
+    ],
+    "instructions": [
+      "Steam the rice and keep it warm.",
+      "Cook the spinach, sprouts, julienned carrot, and mushrooms separately, dressing each with sesame oil and salt.",
+      "Arrange the vegetables in sections over the rice.",
+      "Top each bowl with a fried egg and a spoonful of gochujang, then mix at the table."
+    ],
+    "tags": ["vegetarian", "korean", "rice-bowl"]
+  },
+  {
+    "id": "chicken-pho",
+    "name": "Chicken Pho",
+    "description": "Vietnamese noodle soup with a clear aromatic broth of charred ginger and spice.",
+    "servings": 4,
+    "ingredients": [
+      {"name": "chicken stock", "quantity": 8, "unit": "cup"},
+      {"name": "rice noodles", "quantity": 8, "unit": "oz"},
+      {"name": "chicken breast", "quantity": 2, "unit": "each"},
+      {"name": "star anise", "quantity": 3, "unit": "each"},
+      {"name": "cinnamon stick", "quantity": 1, "unit": "each"},
+      {"name": "ginger", "quantity": 2, "unit": "tbsp"},
+      {"name": "onion", "quantity": 1, "unit": "each"},
+      {"name": "fish sauce", "quantity": 3, "unit": "tbsp"}
+    ],
+    "instructions": [
+      "Char the halved onion and the ginger directly over a flame until blackened.",
+      "Simmer them in the stock with the star anise and cinnamon, then strain.",
+      "Poach the chicken in the broth, remove, and slice thinly.",
+      "Season the broth with fish sauce and ladle over cooked rice noodles and chicken."
+    ],
+    "tags": ["dairy-free", "vietnamese", "soup", "noodles"]
+  },
+  {
+    "id": "mujadara-with-crispy-onions",
+    "name": "Mujadara with Crispy Onions",
+    "description": "Levantine lentils and rice buried under deeply caramelised onions.",
+    "servings": 4,
+    "ingredients": [
+      {"name": "lentils", "quantity": 2, "unit": "cup"},
+      {"name": "rice", "quantity": 1, "unit": "cup"},
+      {"name": "onion", "quantity": 3, "unit": "each"},
+      {"name": "olive oil", "quantity": 4, "unit": "tbsp"},
+      {"name": "cumin", "quantity": 2, "unit": "tsp"},
+      {"name": "parsley", "quantity": 1, "unit": "bunch"},
+      {"name": "lemon", "quantity": 1, "unit": "each"}
+    ],
+    "instructions": [
+      "Fry the thinly sliced onions slowly in olive oil until dark and crisp, then drain.",
+      "Simmer the lentils until almost tender and drain, keeping the liquid.",
+      "Add the rice and cumin with the reserved liquid and steam until both are cooked.",
+      "Fold half the onions through and pile the rest on top with parsley and lemon."
+    ],
+    "tags": ["vegan", "vegetarian", "gluten-free", "dairy-free", "lebanese", "budget"]
+  },
+  {
+    "id": "lomo-saltado",
+    "name": "Lomo Saltado",
+    "description": "Peruvian stir-fried beef with onion, tomato, and fries served over rice.",
+    "servings": 4,
+    "ingredients": [
+      {"name": "beef sirloin", "quantity": 1, "unit": "lb"},
+      {"name": "potatoes", "quantity": 3, "unit": "each"},
+      {"name": "onion", "quantity": 1, "unit": "each"},
+      {"name": "tomatoes", "quantity": 3, "unit": "each"},
+      {"name": "soy sauce", "quantity": 3, "unit": "tbsp"},
+      {"name": "aji amarillo paste", "quantity": 2, "unit": "tbsp"},
+      {"name": "cilantro", "quantity": 1, "unit": "bunch"},
+      {"name": "rice", "quantity": 2, "unit": "cup"}
+    ],
+    "instructions": [
+      "Fry the potato batons until crisp and keep them warm.",
+      "Sear the sliced beef in a very hot pan in batches so it browns rather than steams.",
+      "Add the onion wedges and tomato, then the soy sauce and aji amarillo paste.",
+      "Toss the fries through at the last moment and serve over rice with cilantro."
+    ],
+    "tags": ["dairy-free", "peruvian", "stir-fry", "family"]
   }
 ]

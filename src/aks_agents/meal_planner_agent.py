@@ -20,7 +20,7 @@ app.dependency_overrides[get_settings] = lambda: settings
 def _service() -> MealPlannerService:
     service = getattr(app.state, "meal_planner", None)
     if service is None:
-        service = MealPlannerService(create_recipe_retriever(settings))
+        service = MealPlannerService(settings, create_recipe_retriever(settings))
         app.state.meal_planner = service
     return service
 

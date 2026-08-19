@@ -24,6 +24,8 @@
 - Treat prompts, retrieved documents, A2A payloads, and MCP output as untrusted data.
 - Separate system instructions from retrieved content and reject tool instructions embedded in RAG documents.
 - Schema-validate every inter-agent and tool message; cap sizes, timeouts, retries, and model/tool budgets.
+- Re-resolve every model-selected recipe ID against Search and every substitute SKU against MCP results.
+- Keep serving arithmetic, stock quantities, and availability flags outside model control.
 - Inventory is read-only. Any future mutation requires user confirmation, idempotency, transaction controls, and a separate app role.
 - Minimize retention of anonymous conversation text and avoid collecting special-category data. Redact content before telemetry.
 - Preserve RAG source IDs and inventory timestamps so results are explainable.
@@ -48,12 +50,13 @@ Instrument Python services with OpenTelemetry and correlate the complete path:
 flowchart LR
     A[Ingress request] --> B[A2A task spans]
     B --> C[RAG/search span]
-    C --> D[Model invocation span]
+    C --> D[Meal Planner model span]
     D --> E[MCP tool span]
-    E --> F[Application Insights]
+    E --> F[Availability model span]
+    F --> I[Application Insights]
     K[AKS platform logs] --> L[Log Analytics / Container Insights]
     P[Prometheus metrics] --> G[Azure Monitor workspace / Grafana]
-    F --> H[Dashboards and alerts]
+    I --> H[Dashboards and alerts]
     L --> H
     G --> H
 ```

@@ -5,8 +5,8 @@
 | Component | Responsibility | Runtime identity |
 | --- | --- | --- |
 | Concierge Agent | Input validation, orchestration, and final response; hosted in-process by the web API | `concierge` ServiceAccount and UAMI, plus its own blueprint and Agent ID |
-| Meal Planner Agent | Recipe generation and grounding with Foundry plus Azure AI Search | `meal-planner` ServiceAccount and UAMI, plus its own blueprint and Agent ID |
-| Availability Agent | Converts ingredient requirements into inventory lookups and substitutions | `availability` ServiceAccount and UAMI, plus its own blueprint and Agent ID |
+| Meal Planner Agent | Selects grounded Search candidates with Foundry, validates source IDs, and scales ingredients deterministically | `meal-planner` ServiceAccount and UAMI, plus its own blueprint and Agent ID |
+| Availability Agent | Checks authoritative MCP inventory, uses Foundry to rank grounded substitutes, and revalidates selected SKUs | `availability` ServiceAccount and UAMI, plus its own blueprint and Agent ID |
 | Inventory MCP | Exposes read-only inventory tools backed by seeded data | `inventory-mcp` ServiceAccount and UAMI; a protected MCP API with no Agent ID of its own |
 | Frontend and web API | Anonymous browser experience, correlation, and public API boundary | Static frontend has no identity; the web API runs under the Concierge ServiceAccount and UAMI because it hosts the Concierge |
 | Microsoft Foundry | Model endpoint and agent/model operations | Azure RBAC granted to the calling agent's UAMI |
@@ -71,10 +71,10 @@ flowchart TB
     I --> DB
     C -.->|local token request| CS
     A -.->|local token request| AS
-    C -.->|UAMI + Azure RBAC| F
+    C -->|UAMI + Azure RBAC| F
     M -->|UAMI + Azure RBAC| F
+    A -->|UAMI + Azure RBAC| F
     M -->|UAMI + Azure RBAC| S
-    A -.->|UAMI + Azure RBAC| F
     CS -.->|ServiceAccount assertion| WI
     AS -.->|ServiceAccount assertion| WI
     M -.->|ServiceAccount assertion| WI
@@ -114,7 +114,7 @@ Separate blueprints intentionally favor isolation over blueprint reuse. Compromi
 
 | Caller | Resource | Authorization |
 | --- | --- | --- |
-| Concierge, Meal Planner, Availability UAMIs | Foundry account and model deployments | `Cognitive Services OpenAI User` in the current Bicep |
+| Concierge, Meal Planner, Availability UAMIs | Foundry account and model deployments | `Cognitive Services OpenAI User`; each agent performs its own bounded inference |
 | Meal Planner UAMI only | Azure AI Search index | `Search Index Data Reader`, read/query only |
 | All four workload UAMIs | Application Insights | `Monitoring Metrics Publisher` |
 | Inventory MCP UAMI | No inference or Search access | Serves seeded local data only |
@@ -125,6 +125,11 @@ Separate blueprints intentionally favor isolation over blueprint reuse. Compromi
 Each A2A/MCP row pairs two different directory objects: the caller's agent identity (`<prefix>-agent-<slug>`) is *assigned* the role, and a separate protected API application (`<prefix>-api-<slug>`) *defines* the role and the audience. The similar names are not the same object — see [identity-authentication.md §4](identity-authentication.md#4-the-four-identity-planes).
 
 Do not substitute Kubernetes RBAC, network policy, or possession of a UAMI token for app-level A2A/MCP authorization. The two planes are independent: revoking an Azure role does not stop an A2A call, and disabling an Agent ID does not remove Azure data-plane access.
+
+Foundry reasoning is also separated from authoritative data operations. Meal
+Planner may select only recipe IDs returned by Search; Python performs serving
+arithmetic. Availability may select only candidate SKUs returned by Inventory
+MCP; MCP quantities and availability flags are copied without model changes.
 
 ## Current versus optional hardening
 

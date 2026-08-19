@@ -5,7 +5,7 @@ from enum import StrEnum
 from typing import Any, Literal
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, field_validator, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 
 class HealthResponse(BaseModel):
@@ -102,12 +102,16 @@ class ConciergeResult(BaseModel):
     intent: Literal["meal_plan", "inventory_query", "unknown"]
     search_terms: list[str]
     dietary_preferences: list[str]
+    excluded_ingredients: list[str] = Field(default_factory=list)
 
 
 class MealPlanRequest(BaseModel):
     search_terms: list[str]
     dietary_preferences: list[str] = Field(default_factory=list)
+    excluded_ingredients: list[str] = Field(default_factory=list)
     servings: int = Field(default=2, ge=1, le=20)
+    store: str = Field(default="default", min_length=1, max_length=200)
+    budget: float | None = Field(default=None, gt=0)
 
 
 class PlannedRecipe(BaseModel):
@@ -118,16 +122,23 @@ class PlannedRecipe(BaseModel):
 class MealPlanResult(BaseModel):
     recipes: list[PlannedRecipe]
     rationale: str
+    grounding_source_ids: list[str] = Field(default_factory=list)
+    model_used: bool = False
 
 
 class AvailabilityRequest(BaseModel):
     ingredients: list[RecipeIngredient]
+    dietary_preferences: list[str] = Field(default_factory=list)
+    excluded_ingredients: list[str] = Field(default_factory=list)
+    store: str = Field(default="default", min_length=1, max_length=200)
 
 
 class AvailabilityResult(BaseModel):
     items: list[ProductAvailability]
     substitutes: list[Substitute] = Field(default_factory=list)
     all_available: bool
+    as_of: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    model_used: bool = False
 
 
 class InteractionResult(BaseModel):
@@ -197,8 +208,10 @@ class EventType(StrEnum):
     ACCEPTED = "interaction.accepted"
     CONCIERGE = "concierge.completed"
     RAG = "rag.completed"
+    MEAL_REASONING = "meal_reasoning.completed"
     MEAL_PLAN = "meal_plan.completed"
     INVENTORY = "inventory.completed"
+    AVAILABILITY_REASONING = "availability_reasoning.completed"
     AVAILABILITY = "availability.completed"
     COMPLETED = "interaction.completed"
     ERROR = "interaction.error"

@@ -26,7 +26,7 @@ def _service() -> AvailabilityService:
             if settings.development_mode and not settings.inventory_mcp_url
             else McpInventoryClient(settings, create_token_provider(settings))
         )
-        service = AvailabilityService(inventory)
+        service = AvailabilityService(settings, inventory)
         app.state.availability = service
     return service
 

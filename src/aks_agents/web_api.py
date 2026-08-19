@@ -116,6 +116,13 @@ def _to_timeline(
             "recipes.retrieve",
             "success",
         ),
+        EventType.MEAL_REASONING: (
+            "azure-uami",
+            "meal-planner-agent",
+            "foundry-model",
+            "meal-plan.reason",
+            "success",
+        ),
         EventType.MEAL_PLAN: (
             "agent-a2a",
             "concierge-agent",
@@ -128,6 +135,13 @@ def _to_timeline(
             "availability-agent",
             "inventory-mcp",
             "inventory.check",
+            "success",
+        ),
+        EventType.AVAILABILITY_REASONING: (
+            "azure-uami",
+            "availability-agent",
+            "foundry-model",
+            "substitutions.reason",
             "success",
         ),
         EventType.AVAILABILITY: (

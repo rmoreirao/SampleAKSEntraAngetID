@@ -74,6 +74,9 @@ class Settings(BaseSettings):
     foundry_endpoint: AnyHttpUrl | None = None
     foundry_model: str | None = None
     foundry_api_version: str = "2024-10-21"
+    foundry_timeout_seconds: float = Field(default=30.0, gt=0, le=120)
+    foundry_max_output_tokens: int = Field(default=1200, ge=100, le=8000)
+    foundry_validation_retries: int = Field(default=1, ge=0, le=2)
     agent_framework_enabled: bool = False
 
     otel_service_name: str | None = None

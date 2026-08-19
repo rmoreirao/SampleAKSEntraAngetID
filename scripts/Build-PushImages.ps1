@@ -33,8 +33,22 @@ foreach ($image in @(
     @{ Name = 'meal-web'; File = 'docker/web.Dockerfile' }
 )) {
     Write-Host "Building $($image.Name):$ImageTag in $acrName..."
-    & az acr build --registry $acrName --image "$($image.Name):$ImageTag" `
-        --file $image.File @cacheArgs --only-show-errors $root
+    $buildJson = & az acr build --registry $acrName --image "$($image.Name):$ImageTag" `
+        --file $image.File @cacheArgs --no-logs --output json --only-show-errors $root
     if ($LASTEXITCODE -ne 0) { throw "Build failed for $($image.Name)." }
+    $build = $buildJson | ConvertFrom-Json
+    $runId = [string]$build.runId
+    if (-not $runId) { throw "ACR returned no run ID for $($image.Name)." }
+    $deadline = [DateTime]::UtcNow.AddMinutes(30)
+    do {
+        Start-Sleep -Seconds 5
+        $status = & az acr task show-run --registry $acrName --run-id $runId `
+            --query status --output tsv --only-show-errors
+        if ($LASTEXITCODE -ne 0) { throw "Could not read ACR run $runId." }
+    } while ($status -in @('Queued', 'Started', 'Running') -and [DateTime]::UtcNow -lt $deadline)
+    if ($status -ne 'Succeeded') {
+        throw "Build failed for $($image.Name); ACR run $runId ended with '$status'."
+    }
+    Write-Host "ACR run $runId succeeded for $($image.Name)."
 }
 Write-Host "Published image tag '$ImageTag'."

@@ -127,7 +127,7 @@ The Azure RBAC granted to the UAMI plane is deliberately narrow and unrelated to
 | `mealPlanner` only | `Search Index Data Reader` | Azure AI Search |
 | all four | `Monitoring Metrics Publisher` | Application Insights |
 
-`inventoryMcp` deliberately receives no inference or Search role: it serves seeded local data.
+`inventoryMcp` deliberately receives no inference or Search role: it serves seeded local data. `concierge`, `mealPlanner`, and `availability` each set `APP_FOUNDRY_ENABLED=true` and call Foundry through their own UAMI. These Azure RBAC calls remain independent of Agent ID: Concierge uses Agent ID for A2A calls, Availability uses Agent ID for MCP, and Meal Planner is currently an A2A callee only.
 
 ### Caller objects and callee objects have similar names. They are not the same thing
 

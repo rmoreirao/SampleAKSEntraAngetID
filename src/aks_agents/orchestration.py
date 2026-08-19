@@ -44,8 +44,12 @@ class Orchestrator:
                     "Local agent transport is restricted to APP_DEVELOPMENT_MODE=true"
                 )
             self._http = None
-            self._planner = MealPlannerService(create_recipe_retriever(settings))
-            self._availability = AvailabilityService(LocalInventoryClient(settings))
+            self._planner = MealPlannerService(
+                settings, create_recipe_retriever(settings)
+            )
+            self._availability = AvailabilityService(
+                settings, LocalInventoryClient(settings)
+            )
         self.framework_tools = self._create_framework_tools()
 
     def _create_framework_tools(self) -> list[object]:
@@ -100,7 +104,10 @@ class Orchestrator:
         plan_request = MealPlanRequest(
             search_terms=concierge.search_terms,
             dietary_preferences=concierge.dietary_preferences,
+            excluded_ingredients=concierge.excluded_ingredients,
             servings=request.servings,
+            store=request.store,
+            budget=request.budget,
         )
         if self._http:
             meal_plan = await self._http.meal_plan(plan_request)
@@ -108,7 +115,10 @@ class Orchestrator:
             assert self._planner
             meal_plan = await self._planner.handle(plan_request)
         availability_request = AvailabilityRequest(
-            ingredients=flatten_ingredients(meal_plan)
+            ingredients=flatten_ingredients(meal_plan),
+            dietary_preferences=concierge.dietary_preferences,
+            excluded_ingredients=concierge.excluded_ingredients,
+            store=request.store,
         )
         if self._http:
             availability = await self._http.availability(availability_request)
@@ -146,7 +156,10 @@ class Orchestrator:
             plan_request = MealPlanRequest(
                 search_terms=concierge.search_terms,
                 dietary_preferences=concierge.dietary_preferences,
+                excluded_ingredients=concierge.excluded_ingredients,
                 servings=request.servings,
+                store=request.store,
+                budget=request.budget,
             )
             started = perf_counter()
             plan = (
@@ -165,6 +178,15 @@ class Orchestrator:
             )
             yield InteractionEvent(
                 interaction_id=request.interaction_id,
+                type=EventType.MEAL_REASONING,
+                data={
+                    "model_used": plan.model_used,
+                    "grounding_source_ids": plan.grounding_source_ids,
+                    "duration_ms": duration_ms,
+                },
+            )
+            yield InteractionEvent(
+                interaction_id=request.interaction_id,
                 type=EventType.MEAL_PLAN,
                 data={
                     **plan.model_dump(mode="json"),
@@ -172,7 +194,10 @@ class Orchestrator:
                 },
             )
             availability_request = AvailabilityRequest(
-                ingredients=flatten_ingredients(plan)
+                ingredients=flatten_ingredients(plan),
+                dietary_preferences=concierge.dietary_preferences,
+                excluded_ingredients=concierge.excluded_ingredients,
+                store=request.store,
             )
             started = perf_counter()
             availability = (
@@ -187,6 +212,15 @@ class Orchestrator:
                 data={
                     "all_available": availability.all_available,
                     "item_count": len(availability.items),
+                    "duration_ms": duration_ms,
+                },
+            )
+            yield InteractionEvent(
+                interaction_id=request.interaction_id,
+                type=EventType.AVAILABILITY_REASONING,
+                data={
+                    "model_used": availability.model_used,
+                    "substitution_count": len(availability.substitutes),
                     "duration_ms": duration_ms,
                 },
             )

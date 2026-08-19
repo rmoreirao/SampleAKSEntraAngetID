@@ -11,11 +11,13 @@ The implemented authorization edges use `MealPlan.Request`, `Availability.Reques
 ```mermaid
 flowchart LR
     U[Anonymous customer] --> C[Concierge<br/>hosted in web-api]
+    C -->|Model inference| F[Microsoft Foundry]
     C -->|A2A| M[Meal Planner Agent]
     M -->|RAG| S[Azure AI Search]
-    M -->|Model inference| F[Microsoft Foundry]
+    M -->|Grounded selection| F
     C -->|A2A| A[Availability Agent]
     A -->|MCP tools| I[Inventory MCP]
+    A -->|Grounded substitution ranking| F
     I --> D[(Seeded inventory)]
     M -.->|meal plan| C
     A -.->|availability| C
@@ -23,10 +25,13 @@ flowchart LR
 ```
 
 1. The customer supplies preferences, dietary constraints, and serving count without signing in.
-2. Concierge validates the request and delegates meal planning.
-3. Meal Planner uses Microsoft Foundry and Azure AI Search RAG to produce a grounded recipe and ingredient list.
-4. Availability asks the single Inventory MCP service to check the seeded stock.
+2. Concierge uses Microsoft Foundry to extract preferences, constraints, and serving count from the free-text request, then delegates meal planning.
+3. Meal Planner uses Foundry to select from Azure AI Search candidates, then validates recipe IDs and scales quantities deterministically.
+4. Availability asks Inventory MCP for authoritative stock and candidate substitutes, then uses Foundry to rank only those grounded candidates.
 5. Concierge returns the proposed meal, substitutions, availability, and any caveats.
+
+All model responses use strict schemas. Models cannot create recipe IDs, citations,
+inventory quantities, SKUs, or substitutions outside the Search and MCP evidence.
 
 The implementation framework is [Microsoft Agent Framework for Python](https://learn.microsoft.com/en-us/agent-framework/overview/).
 

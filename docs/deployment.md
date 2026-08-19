@@ -51,6 +51,13 @@ Open `http://127.0.0.1:5173`. Stop all processes created by the script with:
 ```
 
 Never enable `APP_DEVELOPMENT_MODE` or `APP_AUTH_LOCAL_DEV_BYPASS` in AKS.
+Local automated tests inject mocked structured model responses and do not call
+Azure:
+
+```powershell
+$env:PYTHONPATH = 'src'
+python -m unittest discover -s tests -v
+```
 
 ## Azure deployment
 
@@ -151,6 +158,9 @@ $imageTag = git rev-parse --short=12 HEAD
 ACR builds `aks-agents:<tag>` and `meal-web:<tag>`. The AKS kubelet identity
 receives `AcrPull` after ACR creation.
 
+If the worktree is intentionally uncommitted, use a unique release tag rather
+than a Git hash so the deployed artifact remains identifiable.
+
 ### 6. Deploy the supported sidecar mode
 
 The deployment script defaults to Microsoft Entra ID Auth SDK sidecar
@@ -166,6 +176,9 @@ configuration, and `SignedAssertionFilePath` on AKS.
 
 The sidecar is injected only into workloads that acquire Agent ID tokens. It is
 not exposed by a Kubernetes Service.
+
+Meal Planner and Availability also set `APP_FOUNDRY_ENABLED=true`. Their
+Foundry access uses their UAMIs and Azure RBAC, not the Agent ID sidecar.
 
 ### 7. Deploy the experimental direct mode
 
@@ -209,13 +222,16 @@ kubectl logs deployment/web-api -n apps --tail=100
 
 Open the external address of the `web` LoadBalancer and submit a vegetarian
 request. The timeline should show Concierge orchestration, Meal Planner RAG,
-Availability A2A, Inventory MCP, citations, and substitutions. It must not show
-bearer tokens, assertions, or authorization headers.
+Meal Planner inference, Availability A2A, Inventory MCP, Availability
+inference, citations, and substitutions. It must not show bearer tokens,
+assertions, authorization headers, raw prompts, or raw model responses.
 
 Application telemetry uses each pod's UAMI with the `Monitoring Metrics
 Publisher` role; Application Insights local authentication remains disabled.
 The public web API is intentionally one replica because live SSE events are
 stored in memory. Use a shared event store before scaling it horizontally.
+All single-replica deployments use `maxSurge: 0` so updates fit on the small PoC
+node pool; this permits a brief interruption during rollout.
 
 ## Troubleshooting
 
@@ -225,6 +241,8 @@ stored in memory. Use a shared event store before scaling it horizontally.
 | `403` from A2A/MCP | Exact app role and caller Agent ID assignment |
 | Search returns no recipes | Run `Initialize-SampleData.ps1`; verify requested dietary tags exist |
 | Foundry request fails | Region/model deployment, quota, endpoint, and UAMI RBAC |
+| Model output rejected | Inspect schema-validation telemetry and verify returned recipe IDs/SKUs exist in Search/MCP evidence |
+| Rollout pod stays Pending | Check node CPU; the checked-in strategy uses zero surge for the constrained PoC cluster |
 | Image pull fails | ACR build tag and AKS kubelet `AcrPull` assignment |
 | No Application Insights traces | UAMI client ID, `Monitoring Metrics Publisher`, and connection string |
 | UI stays in progress | Inspect the anonymous SSE connection and `web-api` logs |
