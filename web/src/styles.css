@@ -744,6 +744,8 @@ nav a:hover { color: var(--mt-ink); border-bottom-color: var(--mt-citrus); }
 .connection > span { width: 7px; height: 7px; border-radius: 50%; background: var(--mt-line-strong); }
 .connection.connected { color: var(--mt-blueberry); }
 .connection.connected > span { background: var(--mt-blueberry); animation: pulse 1.1s ease-in-out infinite; }
+.connection.complete { color: var(--mt-basil); }
+.connection.complete > span { background: var(--mt-basil); }
 
 .timeline-legend {
   display: flex;

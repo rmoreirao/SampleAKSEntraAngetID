@@ -128,8 +128,6 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    sample.microsoft.com/auth-mode: experimental-direct-nonproduction
   name: availability
   namespace: apps
 spec:
@@ -148,13 +146,13 @@ spec:
         - availability-agent
         env:
         - name: APP_TOKEN_PROVIDER
-          value: direct
-        - name: APP_TENANT_ID
-          value: b9e20f22-cdf3-4d31-9628-2e615edcddb1
-        - name: APP_AGENT_BLUEPRINT_CLIENT_ID
-          value: 8d93feb2-2b18-4ad0-9a4b-60d5e7f6234f
+          value: sidecar
+        - name: APP_SIDECAR_TOKEN_URL
+          value: http://127.0.0.1:5000
         - name: APP_AGENT_IDENTITY_CLIENT_ID
           value: 5f2a5cd4-fbb2-471c-8d6f-2d122c7f63d3
+        - name: APP_SIDECAR_SERVICES
+          value: '{"api://6d234ede-e95e-4b31-85e3-0b725f50b428":"Inventory"}'
         - name: APP_PORT
           value: "8003"
         - name: APP_JWT_AUDIENCE
@@ -166,7 +164,7 @@ spec:
         envFrom:
         - configMapRef:
             name: runtime-config
-        image: mealpocfuw2mjacr.azurecr.io/aks-agents:46745ad1d84f-r4
+        image: mealpocfuw2mjacr.azurecr.io/aks-agents:ui-20260819124259
         livenessProbe:
           httpGet:
             path: /healthz
@@ -199,6 +197,61 @@ spec:
         volumeMounts:
         - mountPath: /tmp
           name: tmp
+      - env:
+        - name: ASPNETCORE_ENVIRONMENT
+          value: Production
+        - name: ASPNETCORE_URLS
+          value: http://0.0.0.0:5000
+        - name: AllowedHosts
+          value: '*'
+        - name: Sidecar__AllowOverrides__GetAuthorizationHeaderUnauthenticated
+          value: "true"
+        - name: AzureAd__Instance
+          value: https://login.microsoftonline.com/
+        - name: AzureAd__TenantId
+          value: b9e20f22-cdf3-4d31-9628-2e615edcddb1
+        - name: AzureAd__ClientId
+          value: 8d93feb2-2b18-4ad0-9a4b-60d5e7f6234f
+        - name: AzureAd__ClientCredentials__0__SourceType
+          value: SignedAssertionFilePath
+        - name: DownstreamApis__Inventory__BaseUrl
+          value: http://inventory-mcp:8004
+        - name: DownstreamApis__Inventory__Scopes__0
+          value: api://6d234ede-e95e-4b31-85e3-0b725f50b428/.default
+        - name: DownstreamApis__Inventory__RequestAppToken
+          value: "true"
+        image: mcr.microsoft.com/entra-sdk/auth-sidecar@sha256:05f77ddaf35a0763950d24493044867be9f9a258d113eeff57cecb5cc9cecc78
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: auth-local
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        name: entra-auth-sdk
+        ports:
+        - containerPort: 5000
+          name: auth-local
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: auth-local
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        resources:
+          limits:
+            cpu: 250m
+            memory: 256Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          runAsNonRoot: true
+          runAsUser: 1654
       securityContext:
         runAsNonRoot: true
         seccompProfile:
@@ -241,7 +294,7 @@ spec:
         envFrom:
         - configMapRef:
             name: runtime-config
-        image: mealpocfuw2mjacr.azurecr.io/aks-agents:46745ad1d84f-r4
+        image: mealpocfuw2mjacr.azurecr.io/aks-agents:ui-20260819124259
         livenessProbe:
           httpGet:
             path: /healthz
@@ -318,7 +371,7 @@ spec:
         envFrom:
         - configMapRef:
             name: runtime-config
-        image: mealpocfuw2mjacr.azurecr.io/aks-agents:46745ad1d84f-r4
+        image: mealpocfuw2mjacr.azurecr.io/aks-agents:ui-20260819124259
         livenessProbe:
           httpGet:
             path: /healthz
@@ -377,7 +430,7 @@ spec:
     spec:
       automountServiceAccountToken: false
       containers:
-      - image: mealpocfuw2mjacr.azurecr.io/meal-web:46745ad1d84f-r4
+      - image: mealpocfuw2mjacr.azurecr.io/meal-web:ui-20260819124259
         imagePullPolicy: IfNotPresent
         livenessProbe:
           httpGet:
@@ -427,8 +480,6 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    sample.microsoft.com/auth-mode: sidecar
   name: web-api
   namespace: apps
 spec:
@@ -465,7 +516,7 @@ spec:
         envFrom:
         - configMapRef:
             name: runtime-config
-        image: mealpocfuw2mjacr.azurecr.io/aks-agents:46745ad1d84f-r4
+        image: mealpocfuw2mjacr.azurecr.io/aks-agents:ui-20260819124259
         livenessProbe:
           httpGet:
             path: /healthz
@@ -567,6 +618,25 @@ spec:
       volumes:
       - emptyDir: {}
         name: tmp
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: availability-ingress
+spec:
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: web-api
+    ports:
+    - port: 8003
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app: availability
+  policyTypes:
+  - Ingress
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy

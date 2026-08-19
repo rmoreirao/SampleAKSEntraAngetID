@@ -11,6 +11,7 @@ It is written as a *target design*. Every statement describes what a production-
 | Understand what Agent ID is and why it exists | §2, §3 |
 | Understand how the identities relate to AKS and Azure | §4 |
 | Tell `…-agent-availability` from `…-api-availability` in the tenant | §4 |
+| See every Entra object the PoC creates, and how they nest | §4 |
 | Follow a token from pod to protected API | §5, §7 |
 | Understand how a callee decides to allow the call | §6 |
 | Decide how many blueprints and agent identities to create | §8 |
@@ -154,6 +155,79 @@ Reading an authorization edge therefore means reading across the two families:
 | Availability → Inventory MCP | `mealpoc-agent-availability` | `mealpoc-api-inventory` | `Inventory.Read` |
 
 Both families are defined in one place — `$script:BlueprintDefinitions` and `$script:ApiDefinitions` in `scripts/lib/EntraAgentId.Common.psm1` — and the `Caller` field on each API definition is what ties them together. `Set-AgentRoleAssignments.ps1` reads exactly that field to decide who gets assigned what.
+
+### The complete object inventory
+
+Every Entra directory object this PoC creates, in one picture. Names use the sample prefix `mealpoc`. The workload planes — Kubernetes ServiceAccounts and Azure UAMIs — are not directory objects and are covered separately in §5.
+
+```mermaid
+flowchart TB
+    BCA["mealpoc-agent-concierge-blueprint<br/>blueprint application"]
+    BCP["blueprint principal"]
+    BCI["mealpoc-agent-concierge<br/>agent identity"]
+
+    BMA["mealpoc-agent-meal-planner-blueprint<br/>blueprint application"]
+    BMP["blueprint principal"]
+    BMI["mealpoc-agent-meal-planner<br/>agent identity"]
+
+    BAA["mealpoc-agent-availability-blueprint<br/>blueprint application"]
+    BAP["blueprint principal"]
+    BAI["mealpoc-agent-availability<br/>agent identity"]
+
+    PMA["mealpoc-api-meal-planner<br/>API application"]
+    PMS["service principal<br/>appRole MealPlan.Request"]
+    PAA["mealpoc-api-availability<br/>API application"]
+    PAS["service principal<br/>appRole Availability.Request"]
+    PIA["mealpoc-api-inventory<br/>API application"]
+    PIS["service principal<br/>appRole Inventory.Read"]
+
+    BCA -->|instantiated as| BCP -->|creates| BCI
+    BMA -->|instantiated as| BMP -->|creates| BMI
+    BAA -->|instantiated as| BAP -->|creates| BAI
+    PMA -->|instantiated as| PMS
+    PAA -->|instantiated as| PAS
+    PIA -->|instantiated as| PIS
+
+    BCI ==>|assigned MealPlan.Request| PMS
+    BCI ==>|assigned Availability.Request| PAS
+    BAI ==>|assigned Inventory.Read| PIS
+
+    classDef bpapp fill:#dbeafe,stroke:#2563eb,stroke-width:1px,color:#0b1324
+    classDef bpprin fill:#e0e7ff,stroke:#4f46e5,stroke-width:1px,color:#0b1324
+    classDef agentid fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#0b1324
+    classDef apiapp fill:#fef3c7,stroke:#d97706,stroke-width:1px,color:#0b1324
+    classDef apisp fill:#fed7aa,stroke:#ea580c,stroke-width:2px,color:#0b1324
+
+    class BCA,BMA,BAA bpapp
+    class BCP,BMP,BAP bpprin
+    class BCI,BMI,BAI agentid
+    class PMA,PAA,PIA apiapp
+    class PMS,PAS,PIS apisp
+```
+
+Colour marks the object type: blue is a blueprint application, indigo its tenant principal, **green an agent identity**, amber a protected API application, **orange the API service principal that carries the role**. Each agent reads as one top-to-bottom lane, and the three bold arrows are the only authorization in the tenant.
+
+Read the diagram as three structural rules:
+
+- **Thin arrows are containment.** An application is instantiated in the tenant as a principal; a blueprint principal creates agent identities. Nothing else creates objects.
+- **Bold arrows are `appRoleAssignment` objects** — three of them, one per edge in §6. They always run from a green agent identity to an orange API service principal, never between two agents and never between two APIs.
+- **Meal Planner's lane is a dead end.** Its agent identity holds no assignment because it only ever receives calls, and it has no runtime credential, so it mints no token today **(→ D6)**.
+
+Federated credentials are omitted; they hang off the blueprint *application*, never off the agent identity, and §5 covers them. Including them, that totals 14 caller-side directory objects, 6 callee-side, and 3 assignments joining them:
+
+| Graph type | Count | Instances |
+| --- | --- | --- |
+| `agentIdentityBlueprint` (application) | 3 | Concierge, Meal Planner, Availability |
+| `federatedIdentityCredential` on a blueprint | 5 | 2 ServiceAccount (Concierge, Availability) + 3 UAMI **(→ D5)** |
+| `agentIdentityBlueprintPrincipal` | 3 | one per blueprint |
+| `agentIdentity` | 3 | `mealpoc-agent-{concierge,meal-planner,availability}` |
+| `application` (protected API) | 3 | `mealpoc-api-{meal-planner,availability,inventory}` |
+| `servicePrincipal` (protected API) | 3 | one per protected API |
+| `appRoleAssignment` | 3 | one per authorization edge |
+
+Outside the directory, the same deployment also has 4 Kubernetes ServiceAccounts, 4 UAMIs, and 4 ServiceAccount-to-UAMI federated credentials from `infra/modules/federated-credentials.bicep`. Those are the *workload* planes; they never appear in an Agent ID token.
+
+Everything above is recorded in `entra-outputs.json` under `agentIdentities` and `protectedApis`, which is what `Deploy-AksWorkloads.ps1` reads to render manifests and what `Remove-EntraAgentIdResources.ps1` reads to delete only these exact objects.
 
 ## 5. Authentication flow (outbound)
 

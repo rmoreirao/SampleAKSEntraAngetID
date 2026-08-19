@@ -278,8 +278,8 @@ function Timeline({ events, connected }: { events: InteractionEvent[]; connected
           <span className="eyebrow"><Sparkles size={14} aria-hidden="true" /> Orchestration</span>
           <h2 id="timeline-title">Activity</h2>
         </div>
-        <span className={`connection ${connected ? "connected" : ""}`}>
-          <span /> {connected ? "Streaming" : "Idle"}
+        <span className={`connection ${connected ? "connected" : events.length > 0 ? "complete" : ""}`}>
+          <span /> {connected ? "Streaming" : events.length > 0 ? "Complete" : "Idle"}
         </span>
       </div>
       <div className="timeline-legend">
