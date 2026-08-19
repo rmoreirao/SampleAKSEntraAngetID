@@ -1,0 +1,57 @@
+{
+  "type": "excalidraw",
+  "version": 2,
+  "source": "github-copilot",
+  "elements": [
+    {"id":"if-title","type":"text","x":40,"y":20,"width":980,"height":70,"text":"Identity and authorization flow","fontSize":28,"fontFamily":1,"strokeColor":"#000000","textAlign":"left","verticalAlign":"top"},
+    {"id":"if-subtitle","type":"text","x":40,"y":75,"width":1180,"height":45,"text":"AKS Workload Identity supplies the UAMI credential; Agent ID identifies the autonomous agent to A2A and MCP APIs.","fontSize":16,"fontFamily":1,"strokeColor":"#000000","textAlign":"left","verticalAlign":"top"},
+
+    {"id":"if-workload-container","type":"rectangle","x":40,"y":130,"width":330,"height":500,"strokeColor":"#0078D4","backgroundColor":"transparent","fillStyle":"solid","strokeWidth":2,"roundness":{"type":3}},
+    {"id":"if-workload-label","type":"text","x":60,"y":145,"width":280,"height":55,"text":"AKS workload boundary","fontSize":20,"fontFamily":1,"strokeColor":"#000000","textAlign":"center","verticalAlign":"top"},
+    {"id":"if-pod","type":"rectangle","x":80,"y":220,"width":250,"height":90,"strokeColor":"#0078D4","backgroundColor":"#CFE4FA","fillStyle":"solid","strokeWidth":2,"roundness":{"type":3}},
+    {"id":"if-pod-text","type":"text","x":100,"y":235,"width":210,"height":80,"text":"Agent pod\nMicrosoft Agent Framework Python","fontSize":16,"fontFamily":1,"strokeColor":"#000000","textAlign":"center","verticalAlign":"top"},
+    {"id":"if-sa","type":"rectangle","x":80,"y":360,"width":250,"height":80,"strokeColor":"#0078D4","backgroundColor":"#CFE4FA","fillStyle":"solid","strokeWidth":2,"roundness":{"type":3}},
+    {"id":"if-sa-text","type":"text","x":100,"y":375,"width":210,"height":70,"text":"Dedicated Kubernetes\nServiceAccount","fontSize":16,"fontFamily":1,"strokeColor":"#000000","textAlign":"center","verticalAlign":"top"},
+    {"id":"if-uami","type":"rectangle","x":80,"y":500,"width":250,"height":90,"strokeColor":"#107C10","backgroundColor":"#DFF6DD","fillStyle":"solid","strokeWidth":2,"roundness":{"type":3}},
+    {"id":"if-uami-text","type":"text","x":100,"y":515,"width":210,"height":80,"text":"Dedicated UAMI\nAzure resource identity","fontSize":16,"fontFamily":1,"strokeColor":"#000000","textAlign":"center","verticalAlign":"top"},
+    {"id":"if-pod-sa","type":"arrow","x":205,"y":310,"width":0,"height":50,"strokeColor":"#0078D4","strokeWidth":2,"points":[[0,0],[0,50]],"startBinding":{"elementId":"if-pod","focus":0,"gap":1},"endBinding":{"elementId":"if-sa","focus":0,"gap":1}},
+    {"id":"if-sa-uami","type":"arrow","x":205,"y":440,"width":0,"height":60,"strokeColor":"#107C10","strokeWidth":2,"points":[[0,0],[0,60]],"startBinding":{"elementId":"if-sa","focus":0,"gap":1},"endBinding":{"elementId":"if-uami","focus":0,"gap":1}},
+    {"id":"if-fic-label","type":"text","x":220,"y":452,"width":140,"height":45,"text":"OIDC federation","fontSize":13,"fontFamily":1,"strokeColor":"#000000","textAlign":"left","verticalAlign":"top"},
+
+    {"id":"if-entra-container","type":"rectangle","x":430,"y":130,"width":390,"height":500,"strokeColor":"#5C2D91","backgroundColor":"transparent","fillStyle":"solid","strokeWidth":2,"roundness":{"type":3}},
+    {"id":"if-entra-label","type":"text","x":455,"y":145,"width":340,"height":55,"text":"Microsoft Entra Agent ID","fontSize":20,"fontFamily":1,"strokeColor":"#000000","textAlign":"center","verticalAlign":"top"},
+    {"id":"if-blueprint","type":"rectangle","x":500,"y":240,"width":250,"height":90,"strokeColor":"#5C2D91","backgroundColor":"#E8DAEF","fillStyle":"solid","strokeWidth":2,"roundness":{"type":3}},
+    {"id":"if-blueprint-text","type":"text","x":520,"y":255,"width":210,"height":80,"text":"Agent ID blueprint\ncredentialed by its UAMI","fontSize":16,"fontFamily":1,"strokeColor":"#000000","textAlign":"center","verticalAlign":"top"},
+    {"id":"if-agentid","type":"rectangle","x":500,"y":400,"width":250,"height":90,"strokeColor":"#5C2D91","backgroundColor":"#E8DAEF","fillStyle":"solid","strokeWidth":2,"roundness":{"type":3}},
+    {"id":"if-agentid-text","type":"text","x":520,"y":415,"width":210,"height":80,"text":"Agent ID\nautonomous API caller","fontSize":16,"fontFamily":1,"strokeColor":"#000000","textAlign":"center","verticalAlign":"top"},
+    {"id":"if-blueprint-agent","type":"arrow","x":625,"y":330,"width":0,"height":70,"strokeColor":"#5C2D91","strokeWidth":2,"points":[[0,0],[0,70]],"startBinding":{"elementId":"if-blueprint","focus":0,"gap":1},"endBinding":{"elementId":"if-agentid","focus":0,"gap":1}},
+    {"id":"if-creates-label","type":"text","x":640,"y":345,"width":145,"height":45,"text":"creates / manages","fontSize":13,"fontFamily":1,"strokeColor":"#000000","textAlign":"left","verticalAlign":"top"},
+    {"id":"if-uami-blueprint","type":"arrow","x":330,"y":545,"width":170,"height":260,"strokeColor":"#5C2D91","strokeWidth":2,"points":[[0,0],[80,0],[80,-260],[170,-260]],"startBinding":{"elementId":"if-uami","focus":0,"gap":1},"endBinding":{"elementId":"if-blueprint","focus":0,"gap":1}},
+    {"id":"if-exchange-label","type":"text","x":380,"y":290,"width":115,"height":90,"text":"UAMI-backed\nfederated\ncredential","fontSize":13,"fontFamily":1,"strokeColor":"#000000","textAlign":"center","verticalAlign":"top"},
+
+    {"id":"if-resource-container","type":"rectangle","x":880,"y":130,"width":390,"height":500,"strokeColor":"#107C10","backgroundColor":"transparent","fillStyle":"solid","strokeWidth":2,"roundness":{"type":3}},
+    {"id":"if-resource-label","type":"text","x":905,"y":145,"width":340,"height":55,"text":"Authorized resources","fontSize":20,"fontFamily":1,"strokeColor":"#000000","textAlign":"center","verticalAlign":"top"},
+    {"id":"if-azure","type":"rectangle","x":950,"y":240,"width":250,"height":100,"strokeColor":"#107C10","backgroundColor":"#DFF6DD","fillStyle":"solid","strokeWidth":2,"roundness":{"type":3}},
+    {"id":"if-azure-text","type":"text","x":970,"y":255,"width":210,"height":90,"text":"Microsoft Foundry\nAzure AI Search\nAzure RBAC on UAMI","fontSize":16,"fontFamily":1,"strokeColor":"#000000","textAlign":"center","verticalAlign":"top"},
+    {"id":"if-api","type":"rectangle","x":950,"y":410,"width":250,"height":135,"strokeColor":"#F7630C","backgroundColor":"#FFF4CE","fillStyle":"solid","strokeWidth":2,"roundness":{"type":3}},
+    {"id":"if-api-text","type":"text","x":970,"y":425,"width":210,"height":125,"text":"A2A / MCP APIs\nMealPlan.Request\nAvailability.Request\nInventory.Read","fontSize":16,"fontFamily":1,"strokeColor":"#000000","textAlign":"center","verticalAlign":"top"},
+    {"id":"if-uami-azure","type":"arrow","x":330,"y":545,"width":620,"height":255,"strokeColor":"#107C10","strokeWidth":2,"points":[[0,0],[520,0],[520,-255],[620,-255]],"startBinding":{"elementId":"if-uami","focus":0,"gap":1},"endBinding":{"elementId":"if-azure","focus":0,"gap":1}},
+    {"id":"if-rbac-label","type":"text","x":780,"y":500,"width":160,"height":45,"text":"UAMI token + RBAC","fontSize":13,"fontFamily":1,"strokeColor":"#000000","textAlign":"center","verticalAlign":"top"},
+    {"id":"if-agent-api","type":"arrow","x":750,"y":445,"width":200,"height":32,"strokeColor":"#F7630C","strokeWidth":2,"points":[[0,0],[200,32]],"startBinding":{"elementId":"if-agentid","focus":0,"gap":1},"endBinding":{"elementId":"if-api","focus":0,"gap":1}},
+    {"id":"if-role-label","type":"text","x":790,"y":410,"width":150,"height":45,"text":"Agent token + app role","fontSize":13,"fontFamily":1,"strokeColor":"#000000","textAlign":"center","verticalAlign":"top"},
+
+    {"id":"if-options-container","type":"rectangle","x":40,"y":690,"width":1230,"height":280,"strokeColor":"#495057","backgroundColor":"transparent","fillStyle":"solid","strokeWidth":2,"roundness":{"type":3}},
+    {"id":"if-options-label","type":"text","x":65,"y":705,"width":1170,"height":55,"text":"Agent ID protocol implementation options","fontSize":20,"fontFamily":1,"strokeColor":"#000000","textAlign":"center","verticalAlign":"top"},
+    {"id":"if-sidecar","type":"rectangle","x":110,"y":790,"width":470,"height":120,"strokeColor":"#107C10","backgroundColor":"#DFF6DD","fillStyle":"solid","strokeWidth":2,"roundness":{"type":3}},
+    {"id":"if-sidecar-text","type":"text","x":135,"y":805,"width":420,"height":110,"text":"Supported: Microsoft Entra ID Auth SDK sidecar\nLocal HTTP token acquisition and validation\nRecommended default","fontSize":16,"fontFamily":1,"strokeColor":"#000000","textAlign":"center","verticalAlign":"top"},
+    {"id":"if-direct","type":"rectangle","x":690,"y":790,"width":510,"height":120,"strokeColor":"#F7630C","backgroundColor":"#FFF4CE","fillStyle":"solid","strokeWidth":2,"roundness":{"type":3}},
+    {"id":"if-direct-text","type":"text","x":715,"y":805,"width":460,"height":110,"text":"Experimental: direct in-process Python adapter\nNo first-party in-process Python Agent ID SDK\nNonproduction feature flag only","fontSize":16,"fontFamily":1,"strokeColor":"#000000","textAlign":"center","verticalAlign":"top"},
+
+    {"id":"if-cardinality","type":"text","x":60,"y":1000,"width":1180,"height":100,"text":"Cardinality: Concierge, Meal Planner, and Availability each have a separate ServiceAccount, UAMI, blueprint, and Agent ID. Web API and Inventory MCP have workload UAMIs but are not agents.","fontSize":16,"fontFamily":1,"strokeColor":"#000000","textAlign":"center","verticalAlign":"top"}
+  ],
+  "appState": {
+    "viewBackgroundColor": "#ffffff",
+    "gridSize": 20
+  },
+  "files": {}
+}

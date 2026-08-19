@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: availability
+spec:
+  template:
+    spec:
+      containers:
+        - name: availability
+          env:
+            - { name: APP_TOKEN_PROVIDER, value: sidecar }
+            - { name: APP_SIDECAR_TOKEN_URL, value: "http://127.0.0.1:5000" }
+            - { name: APP_AGENT_IDENTITY_CLIENT_ID, value: "__AVAILABILITY_AGENT_ID__" }
+            - name: APP_SIDECAR_SERVICES
+              value: '{"__INVENTORY_AUDIENCE__":"Inventory"}'
+        - name: entra-auth-sdk
+          image: "__AUTH_SDK_IMAGE__"
+          imagePullPolicy: IfNotPresent
+          env:
+            - { name: ASPNETCORE_ENVIRONMENT, value: Production }
+            - { name: ASPNETCORE_URLS, value: "http://0.0.0.0:5000" }
+            - { name: AllowedHosts, value: "*" }
+            - { name: Sidecar__AllowOverrides__GetAuthorizationHeaderUnauthenticated, value: "true" }
+            - { name: AzureAd__Instance, value: "https://login.microsoftonline.com/" }
+            - { name: AzureAd__TenantId, value: "__TENANT_ID__" }
+            - { name: AzureAd__ClientId, value: "__AVAILABILITY_BLUEPRINT_ID__" }
+            - { name: AzureAd__ClientCredentials__0__SourceType, value: SignedAssertionFilePath }
+            - { name: DownstreamApis__Inventory__BaseUrl, value: "http://inventory-mcp:8004" }
+            - { name: DownstreamApis__Inventory__Scopes__0, value: "__INVENTORY_AUDIENCE__/.default" }
+            - { name: DownstreamApis__Inventory__RequestAppToken, value: "true" }
+          ports:
+            - { name: auth-local, containerPort: 5000 }
+          readinessProbe: { httpGet: { path: /healthz, port: auth-local }, initialDelaySeconds: 5, periodSeconds: 5 }
+          livenessProbe: { httpGet: { path: /healthz, port: auth-local }, initialDelaySeconds: 10, periodSeconds: 10 }
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits: { cpu: 250m, memory: 256Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: [ALL] }
+            runAsNonRoot: true
+            runAsUser: 1654

@@ -1,0 +1,21 @@
+[
+  {"sku": "LEG-CHICKPEA", "name": "chickpeas", "category": "legumes", "quantity": 24, "unit": "can", "tags": ["vegan", "protein"]},
+  {"sku": "VEG-CUCUMBER", "name": "cucumber", "category": "produce", "quantity": 12, "unit": "each", "tags": ["fresh"]},
+  {"sku": "VEG-TOMATO", "name": "tomatoes", "category": "produce", "quantity": 30, "unit": "each", "tags": ["fresh"]},
+  {"sku": "FRU-LEMON", "name": "lemon", "category": "produce", "quantity": 16, "unit": "each", "tags": ["citrus"]},
+  {"sku": "PAN-OIL", "name": "olive oil", "category": "pantry", "quantity": 20, "unit": "tbsp", "tags": ["oil"]},
+  {"sku": "MEA-CHICKEN", "name": "chicken breast", "category": "meat", "quantity": 10, "unit": "each", "tags": ["protein"]},
+  {"sku": "PAN-RICE", "name": "rice", "category": "pantry", "quantity": 14, "unit": "cup", "tags": ["gluten-free"]},
+  {"sku": "VEG-PEPPER", "name": "bell pepper", "category": "produce", "quantity": 8, "unit": "each", "tags": ["fresh"]},
+  {"sku": "VEG-ONION", "name": "onion", "category": "produce", "quantity": 18, "unit": "each", "tags": ["fresh"]},
+  {"sku": "PAN-VEGSTOCK", "name": "vegetable stock", "category": "pantry", "quantity": 12, "unit": "cup", "tags": ["vegan", "stock"]},
+  {"sku": "PAN-PASTA", "name": "pasta", "category": "pantry", "quantity": 4, "unit": "lb", "tags": ["wheat"]},
+  {"sku": "DAI-CREAM", "name": "cream", "category": "dairy", "quantity": 2, "unit": "cup", "tags": ["dairy"]},
+  {"sku": "DAI-PARM", "name": "parmesan", "category": "dairy", "quantity": 4, "unit": "cup", "tags": ["dairy"]},
+  {"sku": "VEG-TOFU", "name": "tofu", "category": "protein", "quantity": 6, "unit": "block", "tags": ["vegan", "protein"]},
+  {"sku": "VEG-BROCCOLI", "name": "broccoli", "category": "produce", "quantity": 5, "unit": "head", "tags": ["fresh"]},
+  {"sku": "PAN-SOY", "name": "soy sauce", "category": "pantry", "quantity": 20, "unit": "tbsp", "tags": ["savory"]},
+  {"sku": "VEG-GINGER", "name": "ginger", "category": "produce", "quantity": 8, "unit": "tbsp", "tags": ["fresh"]},
+  {"sku": "PAN-CHICKENSTOCK", "name": "chicken stock", "category": "pantry", "quantity": 0, "unit": "cup", "tags": ["stock"]},
+  {"sku": "DAI-YOGURT", "name": "greek yogurt", "category": "dairy", "quantity": 3, "unit": "cup", "tags": ["dairy", "creamy"]}
+]

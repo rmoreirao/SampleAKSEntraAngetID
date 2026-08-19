@@ -1,0 +1,327 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: apps
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: concierge
+  annotations:
+    azure.workload.identity/client-id: "__CONCIERGE_CLIENT_ID__"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: meal-planner
+  annotations:
+    azure.workload.identity/client-id: "__MEAL_PLANNER_CLIENT_ID__"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: availability
+  annotations:
+    azure.workload.identity/client-id: "__AVAILABILITY_CLIENT_ID__"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: inventory-mcp
+  annotations:
+    azure.workload.identity/client-id: "__INVENTORY_MCP_CLIENT_ID__"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: runtime-config
+data:
+  APP_JWT_ISSUER: "__JWT_ISSUER__"
+  APP_JWT_JWKS_URL: "__JWT_JWKS_URL__"
+  APP_FOUNDRY_ENDPOINT: "__FOUNDRY_ENDPOINT__"
+  APP_FOUNDRY_MODEL: "__FOUNDRY_MODEL__"
+  APP_AZURE_SEARCH_ENDPOINT: "__SEARCH_ENDPOINT__"
+  APP_AZURE_SEARCH_INDEX: "__SEARCH_INDEX__"
+  APPLICATIONINSIGHTS_CONNECTION_STRING: "__APPINSIGHTS_CONNECTION_STRING__"
+  APP_MEAL_PLANNER_AUDIENCE: "__MEAL_PLANNER_AUDIENCE__"
+  APP_AVAILABILITY_AUDIENCE: "__AVAILABILITY_AUDIENCE__"
+  APP_INVENTORY_MCP_AUDIENCE: "__INVENTORY_AUDIENCE__"
+  APP_MEAL_PLANNER_URL: "http://meal-planner:8002"
+  APP_AVAILABILITY_URL: "http://availability:8003"
+  APP_INVENTORY_MCP_URL: "http://inventory-mcp:8004/mcp"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: web }
+  template:
+    metadata:
+      labels: { app: web }
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: web
+          image: __ACR_LOGIN_SERVER__/meal-web:__IMAGE_TAG__
+          imagePullPolicy: IfNotPresent
+          ports:
+            - { name: http, containerPort: 8080 }
+          readinessProbe: { httpGet: { path: /healthz, port: http }, initialDelaySeconds: 3, periodSeconds: 10 }
+          livenessProbe: { httpGet: { path: /healthz, port: http }, initialDelaySeconds: 10, periodSeconds: 20 }
+          resources:
+            requests: { cpu: 50m, memory: 64Mi }
+            limits: { cpu: 250m, memory: 128Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: [ALL] }
+            readOnlyRootFilesystem: true
+            runAsUser: 101
+          volumeMounts:
+            - { name: cache, mountPath: /var/cache/nginx }
+            - { name: run, mountPath: /var/run }
+      volumes:
+        - { name: cache, emptyDir: {} }
+        - { name: run, emptyDir: {} }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+spec:
+  type: LoadBalancer
+  selector: { app: web }
+  ports:
+    - { name: http, port: 80, targetPort: 8080 }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-api
+spec:
+  # The PoC keeps interaction events in memory; use one replica unless a shared
+  # event store or sticky routing is added.
+  replicas: 1
+  selector:
+    matchLabels: { app: web-api }
+  template:
+    metadata:
+      labels:
+        app: web-api
+        azure.workload.identity/use: "true"
+    spec:
+      serviceAccountName: concierge
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: web-api
+          image: __ACR_LOGIN_SERVER__/aks-agents:__IMAGE_TAG__
+          command: ["web-api"]
+          ports:
+            - { name: http, containerPort: 8000 }
+          envFrom:
+            - { configMapRef: { name: runtime-config } }
+          env:
+            - { name: APP_PORT, value: "8000" }
+            - { name: APP_AGENT_TRANSPORT, value: http }
+            - { name: APP_TOKEN_PROVIDER, value: none }
+            - { name: APP_FOUNDRY_ENABLED, value: "true" }
+            - { name: APP_UAMI_CLIENT_ID, value: "__CONCIERGE_CLIENT_ID__" }
+          readinessProbe: { httpGet: { path: /healthz, port: http }, initialDelaySeconds: 5, periodSeconds: 10 }
+          livenessProbe: { httpGet: { path: /healthz, port: http }, initialDelaySeconds: 15, periodSeconds: 20 }
+          resources:
+            requests: { cpu: 100m, memory: 192Mi }
+            limits: { cpu: 750m, memory: 512Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: [ALL] }
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - { name: tmp, mountPath: /tmp }
+      volumes:
+        - { name: tmp, emptyDir: {} }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-api
+spec:
+  type: ClusterIP
+  selector: { app: web-api }
+  ports:
+    - { name: http, port: 8000, targetPort: 8000 }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: meal-planner
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: meal-planner }
+  template:
+    metadata:
+      labels:
+        app: meal-planner
+        azure.workload.identity/use: "true"
+    spec:
+      serviceAccountName: meal-planner
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: meal-planner
+          image: __ACR_LOGIN_SERVER__/aks-agents:__IMAGE_TAG__
+          command: ["meal-planner-agent"]
+          ports:
+            - { name: http, containerPort: 8002 }
+          envFrom:
+            - { configMapRef: { name: runtime-config } }
+          env:
+            - { name: APP_PORT, value: "8002" }
+            - { name: APP_JWT_AUDIENCE, value: "__MEAL_PLANNER_AUDIENCE__" }
+            - { name: APP_MEAL_PLANNER_REQUIRED_ROLE, value: "MealPlan.Request" }
+            - { name: APP_RETRIEVAL_MODE, value: azure-search }
+            - { name: APP_AZURE_SEARCH_SEMANTIC_CONFIGURATION, value: recipes-semantic }
+            - { name: APP_UAMI_CLIENT_ID, value: "__MEAL_PLANNER_CLIENT_ID__" }
+          readinessProbe: { httpGet: { path: /healthz, port: http }, initialDelaySeconds: 5, periodSeconds: 10 }
+          livenessProbe: { httpGet: { path: /healthz, port: http }, initialDelaySeconds: 15, periodSeconds: 20 }
+          resources:
+            requests: { cpu: 100m, memory: 192Mi }
+            limits: { cpu: 750m, memory: 512Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: [ALL] }
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - { name: tmp, mountPath: /tmp }
+      volumes:
+        - { name: tmp, emptyDir: {} }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: meal-planner
+spec:
+  type: ClusterIP
+  selector: { app: meal-planner }
+  ports:
+    - { name: http, port: 8002, targetPort: 8002 }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: availability
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: availability }
+  template:
+    metadata:
+      labels:
+        app: availability
+        azure.workload.identity/use: "true"
+    spec:
+      serviceAccountName: availability
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: availability
+          image: __ACR_LOGIN_SERVER__/aks-agents:__IMAGE_TAG__
+          command: ["availability-agent"]
+          ports:
+            - { name: http, containerPort: 8003 }
+          envFrom:
+            - { configMapRef: { name: runtime-config } }
+          env:
+            - { name: APP_PORT, value: "8003" }
+            - { name: APP_JWT_AUDIENCE, value: "__AVAILABILITY_AUDIENCE__" }
+            - { name: APP_AVAILABILITY_REQUIRED_ROLE, value: "Availability.Request" }
+            - { name: APP_TOKEN_PROVIDER, value: none }
+            - { name: APP_UAMI_CLIENT_ID, value: "__AVAILABILITY_CLIENT_ID__" }
+          readinessProbe: { httpGet: { path: /healthz, port: http }, initialDelaySeconds: 5, periodSeconds: 10 }
+          livenessProbe: { httpGet: { path: /healthz, port: http }, initialDelaySeconds: 15, periodSeconds: 20 }
+          resources:
+            requests: { cpu: 100m, memory: 192Mi }
+            limits: { cpu: 750m, memory: 512Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: [ALL] }
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - { name: tmp, mountPath: /tmp }
+      volumes:
+        - { name: tmp, emptyDir: {} }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: availability
+spec:
+  type: ClusterIP
+  selector: { app: availability }
+  ports:
+    - { name: http, port: 8003, targetPort: 8003 }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventory-mcp
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: inventory-mcp }
+  template:
+    metadata:
+      labels:
+        app: inventory-mcp
+        azure.workload.identity/use: "true"
+    spec:
+      serviceAccountName: inventory-mcp
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: inventory-mcp
+          image: __ACR_LOGIN_SERVER__/aks-agents:__IMAGE_TAG__
+          command: ["inventory-mcp"]
+          ports:
+            - { name: http, containerPort: 8004 }
+          envFrom:
+            - { configMapRef: { name: runtime-config } }
+          env:
+            - { name: APP_INVENTORY_MCP_PORT, value: "8004" }
+            - { name: APP_JWT_AUDIENCE, value: "__INVENTORY_AUDIENCE__" }
+            - { name: APP_INVENTORY_MCP_REQUIRED_ROLE, value: "Inventory.Read" }
+            - { name: APP_DATA_DIRECTORY, value: /app/data }
+            - { name: APP_UAMI_CLIENT_ID, value: "__INVENTORY_MCP_CLIENT_ID__" }
+          readinessProbe: { httpGet: { path: /healthz, port: http }, initialDelaySeconds: 5, periodSeconds: 10 }
+          livenessProbe: { httpGet: { path: /healthz, port: http }, initialDelaySeconds: 15, periodSeconds: 20 }
+          resources:
+            requests: { cpu: 100m, memory: 192Mi }
+            limits: { cpu: 750m, memory: 512Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: [ALL] }
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - { name: tmp, mountPath: /tmp }
+      volumes:
+        - { name: tmp, emptyDir: {} }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inventory-mcp
+spec:
+  type: ClusterIP
+  selector: { app: inventory-mcp }
+  ports:
+    - { name: http, port: 8004, targetPort: 8004 }

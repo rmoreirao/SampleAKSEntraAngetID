@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+
+# Node
+node_modules/
+dist/
+
+
+.playwright-cli/
+
+# Local configuration and deployment outputs
+.env
+.env.*
+!.env.example
+*.local.json
+infra-outputs.json
+entra-outputs.json
+
+# Azure and Kubernetes generated files
+.azure/
+kubeconfig*
+
+# Editors and operating systems
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+

@@ -1,0 +1,78 @@
+[
+  {
+    "id": "mediterranean-chickpea-bowls",
+    "name": "Mediterranean Chickpea Bowls",
+    "description": "A quick plant-based bowl with lemon, vegetables, and chickpeas.",
+    "servings": 2,
+    "ingredients": [
+      {"name": "chickpeas", "quantity": 2, "unit": "can"},
+      {"name": "cucumber", "quantity": 1, "unit": "each"},
+      {"name": "tomatoes", "quantity": 2, "unit": "each"},
+      {"name": "lemon", "quantity": 1, "unit": "each"},
+      {"name": "olive oil", "quantity": 2, "unit": "tbsp"}
+    ],
+    "instructions": [
+      "Drain and rinse the chickpeas.",
+      "Dice the cucumber and tomatoes.",
+      "Toss everything with lemon juice and olive oil."
+    ],
+    "tags": ["vegan", "vegetarian", "gluten-free", "quick", "mediterranean"]
+  },
+  {
+    "id": "chicken-rice-skillet",
+    "name": "Chicken and Rice Skillet",
+    "description": "A simple one-pan chicken dinner with rice and vegetables.",
+    "servings": 4,
+    "ingredients": [
+      {"name": "chicken breast", "quantity": 4, "unit": "each"},
+      {"name": "rice", "quantity": 2, "unit": "cup"},
+      {"name": "bell pepper", "quantity": 2, "unit": "each"},
+      {"name": "onion", "quantity": 1, "unit": "each"},
+      {"name": "chicken stock", "quantity": 4, "unit": "cup"}
+    ],
+    "instructions": [
+      "Brown the chicken in a large skillet.",
+      "Add vegetables and cook until softened.",
+      "Add rice and stock, cover, and simmer until cooked."
+    ],
+    "tags": ["dairy-free", "one-pan", "family"]
+  },
+  {
+    "id": "creamy-tomato-pasta",
+    "name": "Creamy Tomato Pasta",
+    "description": "Comforting vegetarian pasta with tomato and cream.",
+    "servings": 4,
+    "ingredients": [
+      {"name": "pasta", "quantity": 1, "unit": "lb"},
+      {"name": "tomatoes", "quantity": 4, "unit": "each"},
+      {"name": "cream", "quantity": 1, "unit": "cup"},
+      {"name": "onion", "quantity": 1, "unit": "each"},
+      {"name": "parmesan", "quantity": 1, "unit": "cup"}
+    ],
+    "instructions": [
+      "Cook pasta according to package directions.",
+      "Simmer chopped tomato and onion until saucy.",
+      "Stir in cream, pasta, and parmesan."
+    ],
+    "tags": ["vegetarian", "pasta", "comfort-food"]
+  },
+  {
+    "id": "tofu-vegetable-stir-fry",
+    "name": "Tofu Vegetable Stir-Fry",
+    "description": "Crisp tofu and vegetables in a savory ginger sauce.",
+    "servings": 2,
+    "ingredients": [
+      {"name": "tofu", "quantity": 1, "unit": "block"},
+      {"name": "broccoli", "quantity": 1, "unit": "head"},
+      {"name": "bell pepper", "quantity": 1, "unit": "each"},
+      {"name": "soy sauce", "quantity": 3, "unit": "tbsp"},
+      {"name": "ginger", "quantity": 1, "unit": "tbsp"}
+    ],
+    "instructions": [
+      "Sear cubed tofu until crisp.",
+      "Stir-fry the vegetables.",
+      "Add tofu, soy sauce, and ginger and toss."
+    ],
+    "tags": ["vegan", "vegetarian", "quick", "asian"]
+  }
+]

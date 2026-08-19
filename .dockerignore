@@ -1,0 +1,11 @@
+.git
+.venv
+.playwright-cli
+**/__pycache__
+**/*.pyc
+web/node_modules
+web/dist
+deploy/.generated
+deploy/rendered.yaml
+infra-outputs.json
+entra-outputs.json

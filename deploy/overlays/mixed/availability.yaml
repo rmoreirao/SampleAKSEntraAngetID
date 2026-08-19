@@ -1,0 +1,16 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: availability
+  annotations:
+    sample.microsoft.com/auth-mode: experimental-direct-nonproduction
+spec:
+  template:
+    spec:
+      containers:
+        - name: availability
+          env:
+            - { name: APP_TOKEN_PROVIDER, value: direct }
+            - { name: APP_TENANT_ID, value: "__TENANT_ID__" }
+            - { name: APP_AGENT_BLUEPRINT_CLIENT_ID, value: "__AVAILABILITY_BLUEPRINT_ID__" }
+            - { name: APP_AGENT_IDENTITY_CLIENT_ID, value: "__AVAILABILITY_AGENT_ID__" }

@@ -1,0 +1,588 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: apps
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  annotations:
+    azure.workload.identity/client-id: c62a6c1c-fb71-477a-9874-eac66567e42f
+  name: availability
+  namespace: apps
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  annotations:
+    azure.workload.identity/client-id: ffa5429b-dec7-431f-9572-95598db041a8
+  name: concierge
+  namespace: apps
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  annotations:
+    azure.workload.identity/client-id: e3934bb4-6bab-47e3-a8a4-aef18534a762
+  name: inventory-mcp
+  namespace: apps
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  annotations:
+    azure.workload.identity/client-id: 28a5b8b6-2e0b-4ef5-8b44-e0997a5f792e
+  name: meal-planner
+  namespace: apps
+---
+apiVersion: v1
+data:
+  APP_AVAILABILITY_AUDIENCE: api://c317843e-7f4e-4748-a65f-b8e38266ca77
+  APP_AVAILABILITY_URL: http://availability:8003
+  APP_AZURE_SEARCH_ENDPOINT: https://mealpoc-fuw2mj-search.search.windows.net
+  APP_AZURE_SEARCH_INDEX: recipes
+  APP_FOUNDRY_ENDPOINT: https://mealpocfuw2mjai.cognitiveservices.azure.com/
+  APP_FOUNDRY_MODEL: chat
+  APP_INVENTORY_MCP_AUDIENCE: api://6d234ede-e95e-4b31-85e3-0b725f50b428
+  APP_INVENTORY_MCP_URL: http://inventory-mcp:8004/mcp
+  APP_JWT_ISSUER: https://sts.windows.net/b9e20f22-cdf3-4d31-9628-2e615edcddb1/
+  APP_JWT_JWKS_URL: https://login.microsoftonline.com/b9e20f22-cdf3-4d31-9628-2e615edcddb1/discovery/v2.0/keys
+  APP_MEAL_PLANNER_AUDIENCE: api://bb399970-4d4a-42f6-9994-ab03005aba0b
+  APP_MEAL_PLANNER_URL: http://meal-planner:8002
+  APPLICATIONINSIGHTS_CONNECTION_STRING: InstrumentationKey=4f8b0258-fcb0-47e1-bb8f-259347d98845;IngestionEndpoint=https://westeurope-5.in.applicationinsights.azure.com/;LiveEndpoint=https://westeurope.livediagnostics.monitor.azure.com/;ApplicationId=fd493340-af3d-4c1a-9012-5f60d013f0ff
+kind: ConfigMap
+metadata:
+  name: runtime-config
+  namespace: apps
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: availability
+  namespace: apps
+spec:
+  ports:
+  - name: http
+    port: 8003
+    targetPort: 8003
+  selector:
+    app: availability
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inventory-mcp
+  namespace: apps
+spec:
+  ports:
+  - name: http
+    port: 8004
+    targetPort: 8004
+  selector:
+    app: inventory-mcp
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: meal-planner
+  namespace: apps
+spec:
+  ports:
+  - name: http
+    port: 8002
+    targetPort: 8002
+  selector:
+    app: meal-planner
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+  namespace: apps
+spec:
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8080
+  selector:
+    app: web
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-api
+  namespace: apps
+spec:
+  ports:
+  - name: http
+    port: 8000
+    targetPort: 8000
+  selector:
+    app: web-api
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    sample.microsoft.com/auth-mode: experimental-direct-nonproduction
+  name: availability
+  namespace: apps
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: availability
+  template:
+    metadata:
+      labels:
+        app: availability
+        azure.workload.identity/use: "true"
+    spec:
+      containers:
+      - command:
+        - availability-agent
+        env:
+        - name: APP_TOKEN_PROVIDER
+          value: direct
+        - name: APP_TENANT_ID
+          value: b9e20f22-cdf3-4d31-9628-2e615edcddb1
+        - name: APP_AGENT_BLUEPRINT_CLIENT_ID
+          value: 8d93feb2-2b18-4ad0-9a4b-60d5e7f6234f
+        - name: APP_AGENT_IDENTITY_CLIENT_ID
+          value: 5f2a5cd4-fbb2-471c-8d6f-2d122c7f63d3
+        - name: APP_PORT
+          value: "8003"
+        - name: APP_JWT_AUDIENCE
+          value: api://c317843e-7f4e-4748-a65f-b8e38266ca77
+        - name: APP_AVAILABILITY_REQUIRED_ROLE
+          value: Availability.Request
+        - name: APP_UAMI_CLIENT_ID
+          value: c62a6c1c-fb71-477a-9874-eac66567e42f
+        envFrom:
+        - configMapRef:
+            name: runtime-config
+        image: mealpocfuw2mjacr.azurecr.io/aks-agents:46745ad1d84f-r4
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: http
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        name: availability
+        ports:
+        - containerPort: 8003
+          name: http
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          limits:
+            cpu: 750m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 192Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /tmp
+          name: tmp
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: availability
+      volumes:
+      - emptyDir: {}
+        name: tmp
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventory-mcp
+  namespace: apps
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: inventory-mcp
+  template:
+    metadata:
+      labels:
+        app: inventory-mcp
+        azure.workload.identity/use: "true"
+    spec:
+      containers:
+      - command:
+        - inventory-mcp
+        env:
+        - name: APP_INVENTORY_MCP_PORT
+          value: "8004"
+        - name: APP_JWT_AUDIENCE
+          value: api://6d234ede-e95e-4b31-85e3-0b725f50b428
+        - name: APP_INVENTORY_MCP_REQUIRED_ROLE
+          value: Inventory.Read
+        - name: APP_DATA_DIRECTORY
+          value: /app/data
+        - name: APP_UAMI_CLIENT_ID
+          value: e3934bb4-6bab-47e3-a8a4-aef18534a762
+        envFrom:
+        - configMapRef:
+            name: runtime-config
+        image: mealpocfuw2mjacr.azurecr.io/aks-agents:46745ad1d84f-r4
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: http
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        name: inventory-mcp
+        ports:
+        - containerPort: 8004
+          name: http
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          limits:
+            cpu: 750m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 192Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /tmp
+          name: tmp
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: inventory-mcp
+      volumes:
+      - emptyDir: {}
+        name: tmp
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: meal-planner
+  namespace: apps
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: meal-planner
+  template:
+    metadata:
+      labels:
+        app: meal-planner
+        azure.workload.identity/use: "true"
+    spec:
+      containers:
+      - command:
+        - meal-planner-agent
+        env:
+        - name: APP_PORT
+          value: "8002"
+        - name: APP_JWT_AUDIENCE
+          value: api://bb399970-4d4a-42f6-9994-ab03005aba0b
+        - name: APP_MEAL_PLANNER_REQUIRED_ROLE
+          value: MealPlan.Request
+        - name: APP_RETRIEVAL_MODE
+          value: azure-search
+        - name: APP_AZURE_SEARCH_SEMANTIC_CONFIGURATION
+          value: recipes-semantic
+        - name: APP_UAMI_CLIENT_ID
+          value: 28a5b8b6-2e0b-4ef5-8b44-e0997a5f792e
+        envFrom:
+        - configMapRef:
+            name: runtime-config
+        image: mealpocfuw2mjacr.azurecr.io/aks-agents:46745ad1d84f-r4
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: http
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        name: meal-planner
+        ports:
+        - containerPort: 8002
+          name: http
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          limits:
+            cpu: 750m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 192Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /tmp
+          name: tmp
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: meal-planner
+      volumes:
+      - emptyDir: {}
+        name: tmp
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  namespace: apps
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - image: mealpocfuw2mjacr.azurecr.io/meal-web:46745ad1d84f-r4
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 20
+        name: web
+        ports:
+        - containerPort: 8080
+          name: http
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: http
+          initialDelaySeconds: 3
+          periodSeconds: 10
+        resources:
+          limits:
+            cpu: 250m
+            memory: 128Mi
+          requests:
+            cpu: 50m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+          runAsUser: 101
+        volumeMounts:
+        - mountPath: /var/cache/nginx
+          name: cache
+        - mountPath: /var/run
+          name: run
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      volumes:
+      - emptyDir: {}
+        name: cache
+      - emptyDir: {}
+        name: run
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    sample.microsoft.com/auth-mode: sidecar
+  name: web-api
+  namespace: apps
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web-api
+  template:
+    metadata:
+      labels:
+        app: web-api
+        azure.workload.identity/use: "true"
+    spec:
+      containers:
+      - command:
+        - web-api
+        env:
+        - name: APP_TOKEN_PROVIDER
+          value: sidecar
+        - name: APP_SIDECAR_TOKEN_URL
+          value: http://127.0.0.1:5000
+        - name: APP_AGENT_IDENTITY_CLIENT_ID
+          value: 54e70998-0b55-4d37-90d3-1c6b0dc5d1e7
+        - name: APP_SIDECAR_SERVICES
+          value: '{"api://bb399970-4d4a-42f6-9994-ab03005aba0b":"MealPlanner","api://c317843e-7f4e-4748-a65f-b8e38266ca77":"Availability"}'
+        - name: APP_PORT
+          value: "8000"
+        - name: APP_AGENT_TRANSPORT
+          value: http
+        - name: APP_FOUNDRY_ENABLED
+          value: "true"
+        - name: APP_UAMI_CLIENT_ID
+          value: ffa5429b-dec7-431f-9572-95598db041a8
+        envFrom:
+        - configMapRef:
+            name: runtime-config
+        image: mealpocfuw2mjacr.azurecr.io/aks-agents:46745ad1d84f-r4
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: http
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        name: web-api
+        ports:
+        - containerPort: 8000
+          name: http
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          limits:
+            cpu: 750m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 192Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /tmp
+          name: tmp
+      - env:
+        - name: ASPNETCORE_ENVIRONMENT
+          value: Production
+        - name: ASPNETCORE_URLS
+          value: http://0.0.0.0:5000
+        - name: AllowedHosts
+          value: '*'
+        - name: Sidecar__AllowOverrides__GetAuthorizationHeaderUnauthenticated
+          value: "true"
+        - name: AzureAd__Instance
+          value: https://login.microsoftonline.com/
+        - name: AzureAd__TenantId
+          value: b9e20f22-cdf3-4d31-9628-2e615edcddb1
+        - name: AzureAd__ClientId
+          value: 24bbb61f-2a04-4c26-93a4-a5204b496e46
+        - name: AzureAd__ClientCredentials__0__SourceType
+          value: SignedAssertionFilePath
+        - name: DownstreamApis__MealPlanner__BaseUrl
+          value: http://meal-planner:8002
+        - name: DownstreamApis__MealPlanner__Scopes__0
+          value: api://bb399970-4d4a-42f6-9994-ab03005aba0b/.default
+        - name: DownstreamApis__MealPlanner__RequestAppToken
+          value: "true"
+        - name: DownstreamApis__Availability__BaseUrl
+          value: http://availability:8003
+        - name: DownstreamApis__Availability__Scopes__0
+          value: api://c317843e-7f4e-4748-a65f-b8e38266ca77/.default
+        - name: DownstreamApis__Availability__RequestAppToken
+          value: "true"
+        image: mcr.microsoft.com/entra-sdk/auth-sidecar@sha256:05f77ddaf35a0763950d24493044867be9f9a258d113eeff57cecb5cc9cecc78
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: auth-local
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        name: entra-auth-sdk
+        ports:
+        - containerPort: 5000
+          name: auth-local
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: auth-local
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        resources:
+          limits:
+            cpu: 250m
+            memory: 256Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          runAsNonRoot: true
+          runAsUser: 1654
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: concierge
+      volumes:
+      - emptyDir: {}
+        name: tmp
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: web-api-ingress
+spec:
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: web
+    ports:
+    - port: 8000
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app: web-api
+  policyTypes:
+  - Ingress
