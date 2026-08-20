@@ -27,6 +27,9 @@ Deterministic sample prefix. Cleanup only targets exact names derived from it.
 Path for the generated non-secret Entra outputs JSON.
 .PARAMETER GrantAdminConsent
 Explicitly authorizes creation of app-role assignments.
+.PARAMETER RegisterWithAgent365
+Registers all three agents in the preview Microsoft Agent 365 registry after
+the Entra output has been written.
 .EXAMPLE
 Connect-MgGraph -TenantId $tenant -Scopes 'AgentIdentityBlueprint.Read.All','AgentIdentityBlueprint.Create','AgentIdentityBlueprintPrincipal.Create','AgentIdentityBlueprint.AddRemoveCreds.All','AgentIdentity.Read.All','AgentIdentity.Create.All','AgentIdentity.ReadWrite.All','Application.ReadWrite.All','Directory.Read.All','AppRoleAssignment.ReadWrite.All'
 .\scripts\New-EntraAgentIdResources.ps1 -InfrastructureOutputsPath .\infra-outputs.json -TenantId $tenant -Sponsor admin@contoso.com -Owner admin@contoso.com -Prefix mealagentpoc -GrantAdminConsent
@@ -34,7 +37,8 @@ Connect-MgGraph -TenantId $tenant -Scopes 'AgentIdentityBlueprint.Read.All','Age
 The operator needs an Agent ID Administrator role (or other role documented for
 each Agent ID operation) and an Application Administrator/Cloud Application
 Administrator role for protected application ownership. Graph delegated scopes
-also require tenant admin consent. No beta endpoint is called.
+also require tenant admin consent. Agent ID operations use v1.0; optional Agent
+365 registration uses its documented preview endpoint.
 #>
 [CmdletBinding(SupportsShouldProcess)]
 param(
@@ -44,7 +48,8 @@ param(
     [Parameter(Mandatory)][ValidateNotNullOrEmpty()][string]$Owner,
     [Parameter(Mandatory)][ValidatePattern('^[a-zA-Z0-9][a-zA-Z0-9-]{1,39}$')][string]$Prefix,
     [string]$OutputPath = (Join-Path $PSScriptRoot '..\entra-outputs.json'),
-    [switch]$GrantAdminConsent
+    [switch]$GrantAdminConsent,
+    [switch]$RegisterWithAgent365
 )
 
 Set-StrictMode -Version Latest
@@ -66,6 +71,7 @@ $scopes = @(
     'Directory.Read.All'
 )
 if ($GrantAdminConsent) { $scopes += 'AppRoleAssignment.ReadWrite.All' }
+if ($RegisterWithAgent365) { $scopes += 'AgentRegistration.ReadWrite.All' }
 Assert-AgentGraphContext -TenantId $TenantId -RequiredScopes $scopes
 
 $infra = Get-Content -LiteralPath $InfrastructureOutputsPath -Raw | ConvertFrom-Json
@@ -164,6 +170,34 @@ $output = [ordered]@{
     adminConsent = [ordered]@{ appRoleAssignmentsGranted = $false }
 }
 
+$previousOutputs = if (Test-Path -LiteralPath $OutputPath -PathType Leaf) {
+    Read-EntraOutputs $OutputPath
+} else {
+    $null
+}
+if ($agents.Count -gt 0 -and $agents.Count -ne (Get-AgentBlueprintDefinitions).Count) {
+    throw 'Agent provisioning was incomplete; refusing to write a partial output contract.'
+}
+if ($agents.Count -gt 0 -and $previousOutputs -and (Get-PropertyValue $previousOutputs 'agent365')) {
+    if ($previousOutputs.tenantId -ne $TenantId -or $previousOutputs.prefix -cne $Prefix) {
+        throw 'Existing Agent 365 registration records belong to a different tenant or prefix; refusing to overwrite them.'
+    }
+    foreach ($definition in Get-AgentBlueprintDefinitions) {
+        $previousAgent = Get-PropertyValue $previousOutputs.agentIdentities $definition.Key
+        $currentAgent = Get-PropertyValue $agents $definition.Key
+        if (
+            -not $previousAgent -or
+            $previousAgent.appId -ne $currentAgent.appId -or
+            $previousAgent.blueprint.appId -ne $currentAgent.blueprint.appId
+        ) {
+            throw "Existing Agent 365 registration '$($definition.Key)' belongs to different Agent ID resources; clean it up before reprovisioning."
+        }
+    }
+    $output.schemaVersion = [Math]::Max([int]$output.schemaVersion, [int]$previousOutputs.schemaVersion)
+    $output.betaGraphDependencies = @($previousOutputs.betaGraphDependencies)
+    $output.agent365 = $previousOutputs.agent365
+}
+
 $outputDirectory = Split-Path -Parent $OutputPath
 $outputWritten = $false
 if ($PSCmdlet.ShouldProcess($OutputPath, 'Write non-secret Entra outputs JSON')) {
@@ -176,5 +210,9 @@ if ($PSCmdlet.ShouldProcess($OutputPath, 'Write non-secret Entra outputs JSON'))
 
 if ($GrantAdminConsent -and $outputWritten) {
     & (Join-Path $PSScriptRoot 'Set-AgentRoleAssignments.ps1') -EntraOutputsPath $OutputPath -TenantId $TenantId -ConfirmAdminConsent
+}
+if ($RegisterWithAgent365 -and $outputWritten) {
+    & (Join-Path $PSScriptRoot 'Register-Agent365Resources.ps1') `
+        -EntraOutputsPath $OutputPath -TenantId $TenantId -Confirm:$false
 }
 if ($outputWritten) { Write-Host "Non-secret Entra outputs written to '$OutputPath'." }

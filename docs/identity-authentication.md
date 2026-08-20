@@ -89,6 +89,14 @@ A blueprint and its agent identities are long-lived directory objects, not deplo
 5. **Revoke** — disable an individual agent identity, remove a federated credential, or delete an app-role assignment. These are three independent levers; see §11.
 6. **Delete** via `scripts/Remove-EntraAgentIdResources.ps1`, which verifies immutable IDs, object types, deterministic app roles, and Agent ID-to-blueprint relationships before removing anything.
 
+Agent 365 registry publication is a separate, optional lifecycle step. Run
+`scripts/Register-Agent365Resources.ps1` for an existing deployment or pass
+`-RegisterWithAgent365` during provisioning to create discovery and governance
+records in the Microsoft 365 admin center. These records don't participate in
+token acquisition or authorization. Their IDs are stored in
+`entra-outputs.json` so opt-in cleanup can verify and delete only the matching
+registrations.
+
 ## 4. The four identity planes
 
 A running agent in this system sits behind four distinct identity objects. They are complementary and none substitutes for another. All four are **caller**-side; the resource it calls is a fifth object, covered below.

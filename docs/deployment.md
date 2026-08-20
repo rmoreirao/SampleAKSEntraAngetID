@@ -29,6 +29,11 @@ Directory.Read.All
 AppRoleAssignment.ReadWrite.All
 ```
 
+Optional Agent 365 registry publication also requires the admin-consented
+delegated scope `AgentRegistration.ReadWrite.All`. The registration API is
+currently a Microsoft Graph `/beta` API and isn't supported for production
+applications.
+
 Model availability, versions, quotas, and SKU support vary by Azure region. The
 defaults in `infra/main.bicep` are examples and can be overridden in a direct
 `az deployment group create` call when necessary.
@@ -79,7 +84,8 @@ Connect-MgGraph -TenantId <tenant-id> -Scopes `
   'Application.Read.All',`
   'Application.ReadWrite.All',`
   'Directory.Read.All',`
-  'AppRoleAssignment.ReadWrite.All'
+  'AppRoleAssignment.ReadWrite.All',`
+  'AgentRegistration.ReadWrite.All'
 ```
 
 ### 2. Deploy Azure resources
@@ -112,12 +118,16 @@ each use their own ServiceAccount/UAMI.
   -Sponsor <user-object-id-or-upn> `
   -Owner <directory-object-id-or-upn> `
   -Prefix mealpoc `
-  -GrantAdminConsent
+  -GrantAdminConsent `
+  -RegisterWithAgent365
 ```
 
 This writes `entra-outputs.json`, creates one blueprint and Agent ID for each of
 the three logical agents, adds each agent UAMI as a blueprint federated
-credential, creates the protected APIs, and grants:
+credential, creates the protected APIs, and grants the app roles below.
+`-RegisterWithAgent365` is optional; when selected, it also publishes all three
+blueprint-backed agents to the Agent 365 registry and records their registration
+IDs in the non-secret output.
 
 | Caller Agent ID | API | App role |
 | --- | --- | --- |
@@ -134,6 +144,26 @@ explicitly:
   -TenantId <tenant-id> `
   -ConfirmAdminConsent
 ```
+
+To publish an existing deployment without reprovisioning its Entra objects:
+
+```powershell
+Connect-MgGraph -TenantId <tenant-id> -Scopes `
+  'AgentRegistration.ReadWrite.All'
+
+.\scripts\Register-Agent365Resources.ps1 `
+  -EntraOutputsPath .\entra-outputs.json `
+  -TenantId <tenant-id>
+```
+
+The script is idempotent after the first successful registration. It reads
+each entry back by its recorded registration ID, verifies its Agent ID and
+blueprint bindings, and refuses to reuse a mismatched entry. Successful IDs are
+checkpointed after each agent so a partial run can safely resume. View the
+results in **Microsoft 365 admin center** > **Agents** > **All agents** >
+**Registry** after synchronization completes. Subsequent Entra provisioning
+runs preserve matching Agent 365 records and refuse to overwrite records bound
+to different Agent IDs.
 
 ### 4. Create and seed the Azure AI Search index
 
@@ -272,17 +302,24 @@ Connect-MgGraph -TenantId <tenant-id> -Scopes `
   'AgentIdentity.DeleteRestore.All',`
   'AgentIdentityBlueprint.Read.All',`
   'AgentIdentityBlueprint.DeleteRestore.All',`
-  'Application.ReadWrite.All'
+  'Application.ReadWrite.All',`
+  'AgentRegistration.ReadWrite.All'
 
 .\scripts\Remove-EntraAgentIdResources.ps1 `
   -TenantId <tenant-id> `
   -Prefix mealpoc `
-  -EntraOutputsPath .\entra-outputs.json
+  -EntraOutputsPath .\entra-outputs.json `
+  -RemoveAgent365Registrations
 ```
 
 The cleanup script verifies immutable IDs, application IDs, object types,
 display names, deterministic app roles, and Agent ID-to-blueprint relationships
-before deletion. Remove the Azure resource group separately:
+before deletion. `-RemoveAgent365Registrations` is optional and deletes only
+registry entries recorded in the output after verifying their Agent ID and
+blueprint bindings. Each deleted or already-missing registration is removed
+from the output atomically, and declining registry deletion stops cleanup before
+the backing Agent ID is removed. Omit the switch and its scope to leave Agent
+365 registry entries intact. Remove the Azure resource group separately:
 
 ```powershell
 az group delete --name rg-agentid-poc
@@ -298,3 +335,5 @@ az group delete --name rg-agentid-poc
 - Direct Python Agent ID authentication is experimental.
 - Sidecar image and HTTP contract are intentionally supplied at deployment time
   because Microsoft can revise preview packaging and endpoint contracts.
+- Optional Agent 365 registry publication depends on a preview Microsoft Graph
+  API and doesn't register an M365 messaging endpoint.

@@ -1,21 +1,49 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-# Keep Graph roots and every Agent ID URI centralized. The Agent ID endpoints used here
-# are documented in v1.0 as of 2026; scripts must not silently switch to beta.
+# Keep Graph roots and every Agent ID URI centralized. Agent ID operations use
+# v1.0; Agent 365 registration deliberately uses its documented preview API.
 $script:Graph = @{
     V1 = 'https://graph.microsoft.com/v1.0'
     Beta = 'https://graph.microsoft.com/beta'
     Blueprints = 'https://graph.microsoft.com/v1.0/applications/microsoft.graph.agentIdentityBlueprint'
     BlueprintPrincipals = 'https://graph.microsoft.com/v1.0/servicePrincipals/microsoft.graph.agentIdentityBlueprintPrincipal'
     AgentIdentities = 'https://graph.microsoft.com/v1.0/servicePrincipals/microsoft.graph.agentIdentity'
+    AgentRegistrations = 'https://graph.microsoft.com/beta/copilot/agentRegistrations'
     TokenExchangeAudience = 'api://AzureADTokenExchange'
 }
 
 $script:BlueprintDefinitions = @(
-    @{ Key = 'concierge'; Slug = 'concierge'; Label = 'Concierge' }
-    @{ Key = 'mealPlanner'; Slug = 'meal-planner'; Label = 'Meal Planner' }
-    @{ Key = 'availability'; Slug = 'availability'; Label = 'Availability' }
+    @{
+        Key = 'concierge'
+        Slug = 'concierge'
+        Label = 'Concierge'
+        Description = 'Coordinates meal planning and grocery availability across the supermarket agent system.'
+        Streaming = $true
+        SkillId = 'meal-orchestration'
+        SkillName = 'Meal orchestration'
+        SkillDescription = 'Coordinates recipe planning and product availability checks.'
+    }
+    @{
+        Key = 'mealPlanner'
+        Slug = 'meal-planner'
+        Label = 'Meal Planner'
+        Description = 'Selects grounded recipes and scales ingredient quantities for the requested meal.'
+        Streaming = $false
+        SkillId = 'meal-planning'
+        SkillName = 'Meal planning'
+        SkillDescription = 'Selects and scales recipes based on user preferences and constraints.'
+    }
+    @{
+        Key = 'availability'
+        Slug = 'availability'
+        Label = 'Availability'
+        Description = 'Checks authoritative inventory and ranks grounded ingredient substitutions.'
+        Streaming = $false
+        SkillId = 'availability-check'
+        SkillName = 'Availability checking'
+        SkillDescription = 'Checks stock and proposes inventory-grounded substitutions.'
+    }
 )
 
 $script:ApiDefinitions = @(
@@ -27,6 +55,95 @@ $script:ApiDefinitions = @(
 function Get-AgentBlueprintDefinitions { return $script:BlueprintDefinitions }
 function Get-AgentApiDefinitions { return $script:ApiDefinitions }
 function Get-AgentGraphUris { return $script:Graph }
+
+function New-Agent365RegistrationBody {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]$Definition,
+        [Parameter(Mandatory)]$Agent,
+        [Parameter(Mandatory)]$Outputs
+    )
+
+    return [ordered]@{
+        displayName = $Agent.displayName
+        description = $Definition.Description
+        ownerIds = @($Outputs.ownerObjectId)
+        createdBy = $Outputs.ownerObjectId
+        sourceCreatedDateTime = $Outputs.generatedAtUtc
+        sourceLastModifiedDateTime = $Outputs.generatedAtUtc
+        sourceAgentId = $Agent.appId
+        originatingStore = 'SampleAKSEntraAgentID'
+        agentIdentityId = $Agent.appId
+        agentIdentityBlueprintId = $Agent.blueprint.appId
+        agentCard = [ordered]@{
+            name = $Agent.displayName
+            version = '1.0.0'
+            description = $Definition.Description
+            capabilities = [ordered]@{
+                streaming = [bool]$Definition.Streaming
+                pushNotifications = $false
+            }
+            defaultInputModes = @('text')
+            defaultOutputModes = @('text')
+            skills = @(
+                [ordered]@{
+                    id = $Definition.SkillId
+                    name = $Definition.SkillName
+                    description = $Definition.SkillDescription
+                }
+            )
+        }
+    }
+}
+
+function Get-Agent365Registration {
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$RegistrationId)
+
+    return Invoke-AgentGraph GET "$($script:Graph.AgentRegistrations)/$RegistrationId" -IgnoreStatus 404 -MaxAttempts 3
+}
+
+function Assert-Agent365Registration {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]$Registration,
+        [Parameter(Mandatory)]$ExpectedAgent,
+        [Parameter(Mandatory)][string]$ExpectedRegistrationId
+    )
+
+    if (
+        $Registration.id -ne $ExpectedRegistrationId -or
+        $Registration.displayName -cne $ExpectedAgent.displayName -or
+        $Registration.sourceAgentId -ne $ExpectedAgent.appId -or
+        $Registration.agentIdentityId -ne $ExpectedAgent.appId -or
+        $Registration.agentIdentityBlueprintId -ne $ExpectedAgent.blueprint.appId
+    ) {
+        throw "Agent 365 registration '$ExpectedRegistrationId' no longer matches its immutable provisioning record."
+    }
+}
+
+function Write-JsonFileAtomic {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]$Value,
+        [Parameter(Mandatory)][string]$Path
+    )
+
+    $resolvedPath = [System.IO.Path]::GetFullPath($Path)
+    $directory = [System.IO.Path]::GetDirectoryName($resolvedPath)
+    if (-not [System.IO.Directory]::Exists($directory)) {
+        [System.IO.Directory]::CreateDirectory($directory) | Out-Null
+    }
+    $temporaryPath = Join-Path $directory ".$([System.IO.Path]::GetFileName($resolvedPath)).$([guid]::NewGuid().ToString('N')).tmp"
+    try {
+        $Value | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $temporaryPath -Encoding utf8NoBOM
+        [System.IO.File]::Move($temporaryPath, $resolvedPath, $true)
+    } finally {
+        if (Test-Path -LiteralPath $temporaryPath) {
+            Remove-Item -LiteralPath $temporaryPath -Force
+        }
+    }
+}
 
 function ConvertTo-ODataLiteral {
     param([Parameter(Mandatory)][string]$Value)

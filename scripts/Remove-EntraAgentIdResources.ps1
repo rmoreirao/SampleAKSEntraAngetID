@@ -14,6 +14,9 @@ The same deterministic prefix used during provisioning.
 Required non-secret provisioning output. Tenant, prefix, immutable object IDs,
 display names, application IDs, types, and blueprint relationships are verified
 before any deletion.
+.PARAMETER RemoveAgent365Registrations
+Deletes verified Agent 365 registry entries recorded in the provisioning output
+before deleting their Agent IDs and blueprints.
 .EXAMPLE
 Connect-MgGraph -TenantId $tenant -Scopes 'AgentIdentity.Read.All','AgentIdentity.DeleteRestore.All','AgentIdentityBlueprint.Read.All','AgentIdentityBlueprint.DeleteRestore.All','Application.ReadWrite.All'
 .\scripts\Remove-EntraAgentIdResources.ps1 -TenantId $tenant -Prefix mealagentpoc -EntraOutputsPath .\entra-outputs.json
@@ -25,26 +28,78 @@ Administrator, in addition to the listed admin-consented delegated scopes.
 param(
     [Parameter(Mandatory)][ValidatePattern('^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$')][string]$TenantId,
     [Parameter(Mandatory)][ValidatePattern('^[a-zA-Z0-9][a-zA-Z0-9-]{1,39}$')][string]$Prefix,
-    [Parameter(Mandatory)][ValidateScript({ Test-Path -LiteralPath $_ -PathType Leaf })][string]$EntraOutputsPath
+    [Parameter(Mandatory)][ValidateScript({ Test-Path -LiteralPath $_ -PathType Leaf })][string]$EntraOutputsPath,
+    [switch]$RemoveAgent365Registrations
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 Import-Module (Join-Path $PSScriptRoot 'lib\EntraAgentId.Common.psm1') -Force -DisableNameChecking
-Assert-AgentGraphContext -TenantId $TenantId -RequiredScopes @(
+$requiredScopes = @(
     'AgentIdentity.Read.All',
     'AgentIdentity.DeleteRestore.All',
     'AgentIdentityBlueprint.Read.All',
     'AgentIdentityBlueprint.DeleteRestore.All',
     'Application.ReadWrite.All'
 )
+if ($RemoveAgent365Registrations) { $requiredScopes += 'AgentRegistration.ReadWrite.All' }
+Assert-AgentGraphContext -TenantId $TenantId -RequiredScopes $requiredScopes
 
 $outputs = Read-EntraOutputs $EntraOutputsPath
 if ($outputs.tenantId -ne $TenantId -or $outputs.prefix -cne $Prefix) {
     throw 'Outputs tenant/prefix do not exactly match the cleanup request.'
 }
 
+function Remove-RecordedAgent365Registration {
+    param(
+        [Parameter(Mandatory)]$RegistrationCollection,
+        [Parameter(Mandatory)][string]$Key
+    )
+
+    $RegistrationCollection.PSObject.Properties.Remove($Key)
+    if (@($RegistrationCollection.PSObject.Properties).Count -eq 0) {
+        $outputs.PSObject.Properties.Remove('agent365')
+        $dependencies = @(Get-PropertyValue $outputs 'betaGraphDependencies') |
+            Where-Object { $_ -ne 'copilot/agentRegistrations' }
+        $outputs.betaGraphDependencies = @($dependencies)
+    }
+    Write-JsonFileAtomic -Value $outputs -Path $EntraOutputsPath
+}
+
 $uris = Get-AgentGraphUris
+if ($RemoveAgent365Registrations) {
+    $registrations = Get-PropertyValue (Get-PropertyValue $outputs 'agent365') 'registrations'
+    if (-not $registrations) {
+        throw 'Agent 365 cleanup was requested, but the provisioning output contains no recorded registrations.'
+    }
+    foreach ($definition in Get-AgentBlueprintDefinitions) {
+        $expectedAgent = Get-PropertyValue $outputs.agentIdentities $definition.Key
+        $recorded = Get-PropertyValue $registrations $definition.Key
+        if (-not $recorded -or -not $recorded.id) {
+            throw "Agent 365 cleanup was requested, but registration '$($definition.Key)' is not recorded."
+        }
+        $registration = Get-Agent365Registration $recorded.id
+        if (-not $registration) {
+            if ($PSCmdlet.ShouldProcess("$($recorded.displayName) [$($recorded.id)]", 'Remove stale Agent 365 registration record')) {
+                Remove-RecordedAgent365Registration -RegistrationCollection $registrations -Key $definition.Key
+            } elseif (-not $WhatIfPreference) {
+                throw "Agent 365 registration record cleanup was declined; refusing to delete its Agent ID."
+            }
+            continue
+        }
+        Assert-Agent365Registration `
+            -Registration $registration `
+            -ExpectedAgent $expectedAgent `
+            -ExpectedRegistrationId $recorded.id
+        if ($PSCmdlet.ShouldProcess("$($recorded.displayName) [$($recorded.id)]", 'Delete verified Agent 365 registration')) {
+            Invoke-AgentGraph DELETE "$($uris.AgentRegistrations)/$($recorded.id)" -IgnoreStatus 404 | Out-Null
+            Remove-RecordedAgent365Registration -RegistrationCollection $registrations -Key $definition.Key
+        } elseif (-not $WhatIfPreference) {
+            throw "Agent 365 registration deletion was declined; refusing to delete its Agent ID."
+        }
+    }
+}
+
 foreach ($definition in Get-AgentBlueprintDefinitions) {
     $expected = Get-PropertyValue $outputs.agentIdentities $definition.Key
     if (-not $expected) { throw "Provisioning output is missing agent '$($definition.Key)'." }

@@ -59,4 +59,8 @@ The alternative **direct Python Agent ID protocol adapter is explicitly experime
 - Autonomous agent-to-agent and agent-to-tool calls.
 - Seeded, read-only inventory; no ordering, payment, or stock mutation.
 - The current Azure baseline is implemented in Bicep under `infra/`; Entra Agent ID and app-role automation is implemented by the PowerShell scripts under `scripts/`.
+- Agent 365 registry publication is optional. Use `Register-Agent365Resources.ps1`
+  for an existing deployment or `-RegisterWithAgent365` during Entra setup to
+  make the three agents visible in the Microsoft 365 admin center. This uses a
+  preview Microsoft Graph API and is separate from Agent ID authentication.
 - The current target is a public PoC endpoint backed by AKS. Application Gateway, API Management, a private AKS cluster, and private endpoints are optional future hardening, not current dependencies.
