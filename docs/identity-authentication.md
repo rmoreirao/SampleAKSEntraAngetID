@@ -121,7 +121,7 @@ registrations.
 
 ## 4. The five identity planes
 
-A running agent and the protected API it calls are represented across five distinct identity planes. Four describe the workload and its identities: the ServiceAccount, UAMI, Blueprint, and Agent ID. They do not all participate in the same token exchange—the UAMI branch terminates at Azure resources, while the Blueprint and Agent ID branch protects A2A and MCP calls. The fifth plane is **callee-side**: the protected API application and service principal that identify the called resource. The planes are complementary, and none substitutes for another.
+A running agent and the protected API it calls are represented across five distinct identity planes. Four identify or support the initiating agent: the ServiceAccount, UAMI, Blueprint, and Agent ID. They do not all participate in the same token exchange—the UAMI branch terminates at Azure resources, while the Blueprint and Agent ID branch protects A2A and MCP calls. The fifth represents the receiving service: the protected API application and service principal that identify the called resource. The same workload can occupy both sides of an interaction. The planes are complementary, and none substitutes for another.
 
 | Plane | Object | Answers | Proves it by | Authorization plane |
 | --- | --- | --- | --- | --- |
