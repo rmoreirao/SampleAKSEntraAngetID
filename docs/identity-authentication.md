@@ -23,7 +23,7 @@ It is written as a *target design*. Every statement describes what a production-
 
 [Microsoft Entra Agent ID](https://learn.microsoft.com/en-us/entra/agent-id/what-is-microsoft-entra-agent-id) gives AI agents distinct identities so organizations can authenticate them, grant least-privilege access, apply policy, manage their lifecycle, and attribute their activity. An agent identity is not a renamed app registration or human user account. It is an agent-specific identity built on Microsoft Entra service-principal infrastructure and created from an [agent identity blueprint](https://learn.microsoft.com/en-us/entra/agent-id/agent-blueprint).
 
-Agent builders and developers first define a blueprint for an agent type. The blueprint is the reusable parent and authentication boundary; it can then create one or many agent identities that share its protocol configuration while retaining their own permissions, lifecycle, sponsor, sign-in records, and audit identity.
+Agent builders and developers first define a blueprint for an agent type. The blueprint is the reusable parent and authentication boundary: **it holds the credentials used to authenticate its child agent identities** and can create one or many of them. Children share configuration from the blueprint while retaining their own lifecycle, sponsor, sign-in records, audit identity, and any permissions granted directly to them. They can also receive permissions inherited through the blueprint, as described in §3.
 
 The problem this solves in a system like this one: three cooperating services call each other autonomously, with no human in the loop. Without agent identities, the only things a callee could check are network reachability and a shared workload credential — neither of which answers *"which agent is asking, and is that agent allowed to ask?"*.
 
@@ -31,9 +31,9 @@ The problem this solves in a system like this one: three cooperating services ca
 
 | Component | High-level role |
 | --- | --- |
-| Agent identity blueprint application | The reusable definition of an agent type, including its client ID, metadata, app roles, required resource access, and authentication protocol settings. |
-| Agent identity blueprint principal | The tenant-local service principal created when the blueprint application is added to a tenant. It represents the blueprint at runtime, holds the blueprint's authentication relationship, and creates and manages child agent identities. |
-| Agent identity | A specialized, single-tenant service principal with the agent subtype (`#Microsoft.Graph.AgentIdentity`). It is the identity to which permissions and policy are applied and the identity shown as the acting client in agent sign-in and audit records. |
+| Agent identity blueprint application | The reusable definition and credential-bearing authentication boundary for an agent type, including its client ID, metadata, credentials, required resource access, inheritable-permissions configuration, and authentication protocol settings. |
+| Agent identity blueprint principal | The tenant-local service principal created when the blueprint application is added to a tenant. It represents the blueprint at runtime, receives tenant consent for permissions that may be inherited, and creates and manages child agent identities. |
+| Agent identity | A specialized, single-tenant service principal with the agent subtype (`#Microsoft.Graph.AgentIdentity`). It can inherit eligible permissions from its blueprint principal and receive permissions directly; it is shown as the acting client in agent sign-in and audit records. |
 
 Those three objects are the **caller** side. They are only half of an authorization edge — a caller needs something to be authorized *against*:
 
@@ -49,9 +49,12 @@ flowchart TB
     Developer[Developer]
 
     subgraph Blueprint["Agent identity blueprint"]
-        Application[Blueprint application<br/>Reusable definition and client ID]
-        Principal[Blueprint principal<br/>Tenant-local service principal]
+        Application[Blueprint application<br/>Definition, client ID, and credentials]
+        PermissionConfig[Required resource access<br/>and inheritable permissions]
+        Principal[Blueprint principal<br/>Tenant-local consent and grants]
         Application -->|Instantiated in a tenant| Principal
+        Application --> PermissionConfig
+        PermissionConfig -.->|Makes eligible grants inheritable| Principal
     end
 
     Agent1[Agent identity<br/>Specialized service principal]
@@ -61,11 +64,30 @@ flowchart TB
     Developer -->|Create| Application
     Principal -->|Creates and manages| Agent1
     Principal -->|Creates and manages| AgentN
+    Principal ==>|Eligible consent inherited at token issuance| Agent1
+    Principal ==>|Eligible consent inherited at token issuance| AgentN
     Principal -.->|Acquires tokens on behalf of| Agent1
     Principal -.->|Acquires tokens on behalf of| AgentN
 ```
 
 The blueprint holds the credentials and performs token exchange on behalf of its child identities; the resulting token identifies the individual agent. This separation lets administrators reuse configuration while still authorizing, disabling, and auditing each logical agent independently. It also explains why the runtime's Azure identity and the agent's governance identity serve different purposes.
+
+### Permission inheritance: Blueprint to Agent ID
+
+The Blueprint-to-Agent-ID relationship includes a permission inheritance layer. Four distinct concepts participate, and treating them as interchangeable overstates what the Blueprint itself grants:
+
+| Layer | Stored on | Effect |
+| --- | --- | --- |
+| **Required resource access** | Blueprint application | Declares the APIs, delegated scopes, and application roles the agent type initially requests. It is visible during admin consent review, but grants no access by itself. |
+| **Inheritable permissions** | Blueprint application | Identifies resource applications from which scopes, roles, or both are eligible to flow to child Agent IDs. Eligibility can be enabled independently for scopes and roles, but grants no access by itself. |
+| **Tenant consent** | Blueprint principal | An administrator grants permissions to the Blueprint principal. A grant flows to children only when its resource application is also configured as inheritable. |
+| **Effective permissions** | Computed for the Agent ID token | Microsoft Entra merges eligible inherited permissions with permissions granted directly to that Agent ID. Inherited scopes appear in `scp`; inherited application roles appear in `roles`. |
+
+Inherited permissions are effective at token issuance; they do not appear as individual permission assignments on each Agent ID in the Entra admin center or Microsoft Graph. Direct grants remain available when one child needs access that its siblings should not receive.
+
+This is also where two meanings of *app role* must remain separate. A Blueprint application can expose roles that users or other principals may be assigned when using that agent type. That schema capability is not the same as the downstream application-role permissions that a protected resource exposes and an Agent ID receives directly or inherits through Blueprint-principal consent.
+
+See Microsoft's [inheritable permissions concept](https://learn.microsoft.com/en-us/entra/agent-id/concept-inheritable-permissions) and [configuration guidance](https://learn.microsoft.com/en-us/entra/agent-id/configure-inheritable-permissions-blueprints) for the complete consent matrix and supported inheritance settings.
 
 ### Sponsors and owners
 
@@ -84,7 +106,7 @@ A blueprint and its agent identities are long-lived directory objects, not deplo
 
 1. **Create** the blueprint application, then its tenant-local principal, then one or more agent identities.
 2. **Federate** a credential onto the blueprint so a workload can prove it is entitled to act as those agents.
-3. **Authorize** each agent identity by assigning app roles on the APIs it must call.
+3. **Authorize** through admin consent on the Blueprint principal for an inheritable baseline, direct grants on individual Agent IDs, or both. This PoC uses direct app-role assignments only **(→ D10)**.
 4. **Operate** — replicas, restarts, and redeploys reuse the same identities. Scaling out never creates identities.
 5. **Revoke** — disable an individual agent identity, remove a federated credential, or delete an app-role assignment. These are three independent levers; see §11.
 6. **Delete** via `scripts/Remove-EntraAgentIdResources.ps1`, which verifies immutable IDs, object types, deterministic app roles, and Agent ID-to-blueprint relationships before removing anything.
@@ -97,21 +119,25 @@ token acquisition or authorization. Their IDs are stored in
 `entra-outputs.json` so opt-in cleanup can verify and delete only the matching
 registrations.
 
-## 4. The four identity planes
+## 4. The five identity planes
 
-A running agent in this system sits behind four distinct identity objects. They are complementary and none substitutes for another. All four are **caller**-side; the resource it calls is a fifth object, covered below.
+A running agent and the protected API it calls are represented across five distinct identity planes. Four describe the workload and its identities: the ServiceAccount, UAMI, Blueprint, and Agent ID. They do not all participate in the same token exchange—the UAMI branch terminates at Azure resources, while the Blueprint and Agent ID branch protects A2A and MCP calls. The fifth plane is **callee-side**: the protected API application and service principal that identify the called resource. The planes are complementary, and none substitutes for another.
 
 | Plane | Object | Answers | Proves it by | Authorization plane |
 | --- | --- | --- | --- | --- |
 | Workload | AKS `ServiceAccount` | Which pod workload is running? | A projected, audience-scoped OIDC token on the pod filesystem | Kubernetes |
 | Azure resource | User-assigned managed identity (UAMI) | Which Azure workload may access this Azure resource? | Federating the ServiceAccount token into an Azure token | Azure RBAC |
-| Agent type | Agent identity blueprint | How are identities for this agent type created and authenticated? | Holding the federated credentials and performing the exchange | Entra administration and consent |
-| Agent instance | Agent ID | Which autonomous agent is calling this API? | Being the subject of the token the blueprint mints | OAuth app-role assignments |
+| Agent type | Agent identity blueprint | How are identities for this agent type created and authenticated? | Holding the federated credentials and performing the exchange | Entra administration, consent, and permission inheritance |
+| Agent instance | Agent ID | Which autonomous agent is calling this API? | Being the subject of the token the blueprint mints | Inherited and directly granted OAuth permissions |
+| Resource API | Protected API application + service principal | Which service is the token intended for, and what may the caller do there? | The application publishes the identifier URI and role definitions; the service principal receives assignments; Entra emits `aud` and `roles` | Microsoft identity platform (OAuth audience + app roles) |
 
-Two rules follow, and both are load-bearing:
+Three rules follow, and all are load-bearing:
 
 - **A UAMI is what you need to *run*; an Agent ID is what you need to *call*.** The UAMI is not the agent's governance identity, and an Agent ID is not a substitute for Azure resource RBAC.
-- **The ServiceAccount token feeds both planes, but along two separate paths.** It federates into the UAMI (for Azure RBAC) *and*, separately, into the blueprint (for Agent ID). Neither derived token is used to obtain the other — see §5.
+- **An Agent ID identifies the caller; a protected API identifies the callee.** The API application and service principal define the target audience and available app roles. An Agent ID alone cannot make a service a protected resource, and an API application does not authenticate as an agent.
+- **The ServiceAccount token feeds two separate caller-side authentication branches.** It federates into the UAMI (for Azure RBAC) *and*, separately, into the blueprint (for Agent ID). Neither derived token is used to obtain the other — see §5.
+
+A workload can occupy both sides of this model. Availability needs caller-side Blueprint and Agent ID objects to call Inventory MCP, and a protected API to receive calls from Concierge. Inventory MCP is a pure resource: it needs the protected API plane but correctly has no Blueprint or Agent ID.
 
 ### The object matrix in this repository
 
@@ -163,6 +189,8 @@ Reading an authorization edge therefore means reading across the two families:
 | Availability → Inventory MCP | `mealpoc-agent-availability` | `mealpoc-api-inventory` | `Inventory.Read` |
 
 Both families are defined in one place — `$script:BlueprintDefinitions` and `$script:ApiDefinitions` in `scripts/lib/EntraAgentId.Common.psm1` — and the `Caller` field on each API definition is what ties them together. `Set-AgentRoleAssignments.ps1` reads exactly that field to decide who gets assigned what.
+
+These three edges use **direct Agent ID grants**, not Blueprint permission inheritance. The repository does not populate `requiredResourceAccess` or `inheritablePermissions` for these protected APIs and does not grant their roles to Blueprint principals. Consequently, a new Agent ID created from one of these Blueprints would not automatically receive any of the three roles **(→ D10)**.
 
 ### The complete object inventory
 
@@ -363,6 +391,7 @@ The customer-facing endpoints on `web-api` — `POST /api/chat` and the `GET /ap
 App-role assignments are tenant-wide application permissions, so they are admin-consent operations and are gated accordingly:
 
 - `scripts/Set-AgentRoleAssignments.ps1` issues `POST /servicePrincipals/{agentServicePrincipalId}/appRoleAssignments` for each edge, and refuses to run without the explicit `-ConfirmAdminConsent` switch.
+- The assignment target is the individual Agent ID service principal, not its Blueprint principal. This is the direct-consent layer in Microsoft's model; Blueprint inheritance is not configured **(→ D10)**.
 - Role IDs are deterministic — `New-DeterministicGuid "<tenant>|<prefix>|<role>"` — so re-running provisioning is idempotent and does not orphan existing assignments. If a role of the same name exists with a non-deterministic ID, the script refuses to replace it rather than silently invalidating grants.
 - `scripts/Deploy-AksWorkloads.ps1` refuses to deploy unless `adminConsent.appRoleAssignmentsGranted` is `true` in `entra-outputs.json`, and re-verifies that each recorded audience and role value matches what the manifests expect. Authorization cannot be forgotten between provisioning and rollout.
 
@@ -382,7 +411,7 @@ You cannot implement "validate the Agent ID" without knowing which claim carries
 | `appid` (v1) / `azp` (v2) | Client ID of the **calling agent identity** | This is the "which agent is calling" answer. Compare against an allow-list **(→ D1)** |
 | `oid` | Object ID of the agent identity service principal | Stable directory identifier; the right key for audit correlation |
 | `sub` | Subject | For app-only tokens this equals the caller's object ID; treat as opaque |
-| `roles` | App roles granted to the agent identity | The authorization decision |
+| `roles` | App roles inherited through the Blueprint or granted directly to the agent identity | The authorization decision |
 | `exp`, `nbf`, `iat` | Lifetime | Reject outside the window, with a small clock-skew allowance **(→ D1)** |
 | `idtyp` | `app` on app-only tokens | Reject delegated tokens on an autonomous endpoint |
 
@@ -414,7 +443,7 @@ This PoC intentionally uses one blueprint per agent to isolate authentication cr
 
 ### Decide how many agent identities per blueprint
 
-**Default: use one agent identity per logical agent.** Distinct identities provide the strongest audit attribution, lifecycle control, and least-privilege authorization.
+**Default: use one agent identity per logical agent.** Distinct identities provide the strongest audit attribution, lifecycle control, and least-privilege authorization. A shared inherited baseline does not prevent narrower direct grants or independent disablement of each child.
 
 | Decision factor | Multiple agent identities | Single agent identity |
 | --- | --- | --- |
@@ -442,6 +471,7 @@ Every concept above is implemented somewhere in this repository. This table is t
 | UAMIs and Azure RBAC | `infra/modules/identities.bicep`, `infra/main.bicep` |
 | Protected APIs and deterministic app roles | `Ensure-ProtectedApi`, `New-DeterministicGuid`. The caller/callee pairing lives in `$script:ApiDefinitions` — each entry's `Caller` field names the blueprint whose Agent ID receives the role |
 | App-role assignment (admin consent) | `scripts/Set-AgentRoleAssignments.ps1` |
+| Blueprint permission inheritance | Not implemented. The scripts do not configure `requiredResourceAccess` or `inheritablePermissions` for protected APIs and do not grant their roles to Blueprint principals **(→ D10)** |
 | Deletion with identity verification | `scripts/Remove-EntraAgentIdResources.ps1` |
 | Outbound token acquisition | `src/aks_agents/token_provider.py` — `SidecarAgentTokenProvider`, `DirectAgentTokenProvider`, `NoTokenProvider` |
 | Attaching the header to A2A and MCP calls | `src/aks_agents/transport.py`, `src/aks_agents/inventory_client.py` |
@@ -544,6 +574,8 @@ These are independent. Pick the smallest one that contains the incident.
 | Lever | Effect | Blast radius |
 | --- | --- | --- |
 | Delete one `appRoleAssignment` | The agent loses exactly one capability | One authorization edge |
+| Remove an inherited permission grant from the Blueprint principal | Every child stops inheriting that scope or role | All children of one Blueprint |
+| Remove a resource from the Blueprint's inheritable-permissions configuration | Eligible grants from that resource stop flowing to children | All children of one Blueprint |
 | Disable the agent identity service principal | That agent can no longer obtain or use any token | One agent |
 | Apply a targeted Conditional Access policy | Policy-based block without deleting objects **(→ D8)** | One agent |
 | Delete the blueprint's ServiceAccount FIC | The workload can no longer obtain tokens for any agent under that blueprint | One blueprint's workload |
@@ -567,6 +599,7 @@ This proof of concept knowingly departs from the target design above. Each item 
 | **D7** | An unknown `kid` triggers a fresh JWKS fetch on **every** request, with no negative caching and no rate limit, so a stream of tokens bearing bogus key IDs turns into an unbounded outbound request amplifier. Key rollover itself is handled correctly | `auth.py::_get_key` | Add negative caching and a minimum refresh interval for unknown `kid` values |
 | **D8** | No Conditional Access policy is scoped to the agent identities | provisioning scripts | Add a policy per agent identity as a containment lever |
 | **D9** | `deploy/base` sets `APP_TOKEN_PROVIDER=none`; only an overlay enables a provider | `deploy/base/resources.yaml` | Intentional fail-closed default; keep |
+| **D10** | Protected-API roles are granted directly to individual Agent IDs; the Blueprints do not declare required resource access, configure inheritable permissions, or receive Blueprint-principal consent for those roles | `Ensure-Blueprint`, `Set-AgentRoleAssignments.ps1` | Decide whether the direct per-Agent-ID model is intentional; otherwise configure Blueprint declarations, inheritance eligibility, and consent while preserving direct grants only for child-specific exceptions |
 
 ## 13. Verifying it works
 

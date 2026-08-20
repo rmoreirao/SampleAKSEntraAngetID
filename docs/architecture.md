@@ -122,7 +122,7 @@ Separate blueprints intentionally favor isolation over blueprint reuse. Compromi
 | Concierge Agent ID | Availability A2A API | `Availability.Request` |
 | Availability Agent ID | Inventory MCP API | `Inventory.Read` |
 
-Each A2A/MCP row pairs two different directory objects: the caller's agent identity (`<prefix>-agent-<slug>`) is *assigned* the role, and a separate protected API application (`<prefix>-api-<slug>`) *defines* the role and the audience. The similar names are not the same object — see [identity-authentication.md §4](identity-authentication.md#4-the-four-identity-planes).
+Each A2A/MCP row pairs two different directory objects: the caller's agent identity (`<prefix>-agent-<caller-slug>`) is *assigned* the role, and a separate protected API application (`<prefix>-api-<resource-slug>`) *defines* the role and the audience. The caller and resource slugs usually differ—for example, `<prefix>-agent-concierge` receives `MealPlan.Request` from `<prefix>-api-meal-planner`. See [identity-authentication.md §4](identity-authentication.md#4-the-five-identity-planes).
 
 Do not substitute Kubernetes RBAC, network policy, or possession of a UAMI token for app-level A2A/MCP authorization. The two planes are independent: revoking an Azure role does not stop an A2A call, and disabling an Agent ID does not remove Azure data-plane access.
 

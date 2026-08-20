@@ -1,6 +1,6 @@
 # Microsoft references
 
-Links were checked against Microsoft Learn while preparing these docs on 2026-08-19. Product behavior, preview status, availability, and licensing can change.
+Links were checked against Microsoft Learn while preparing these docs on 2026-08-20. Product behavior, preview status, availability, and licensing can change.
 
 ## Agent ID and workload identity
 
@@ -8,6 +8,8 @@ Links were checked against Microsoft Learn while preparing these docs on 2026-08
 - [What is Microsoft Entra Agent ID](https://learn.microsoft.com/en-us/entra/agent-id/what-is-microsoft-entra-agent-id)
 - [Plan your agent identity architecture](https://learn.microsoft.com/en-us/entra/agent-id/how-to-plan-agent-identity-architecture)
 - [Agent identity blueprints](https://learn.microsoft.com/en-us/entra/agent-id/agent-blueprint)
+- [Inheritable permissions for Microsoft Entra Agent ID](https://learn.microsoft.com/en-us/entra/agent-id/concept-inheritable-permissions)
+- [Configure inheritable permissions for agent identity blueprints](https://learn.microsoft.com/en-us/entra/agent-id/configure-inheritable-permissions-blueprints)
 - [Authorization in Agent ID](https://learn.microsoft.com/en-us/entra/agent-id/authorization-agent-id)
 - [Authentication protocols in agents](https://learn.microsoft.com/en-us/entra/agent-id/agent-oauth-protocols)
 - [Microsoft Entra ID Auth SDK sidecar](https://learn.microsoft.com/en-us/entra/agent-id/microsoft-entra-sdk-for-agent-identities)
